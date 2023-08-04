@@ -1,0 +1,68 @@
+{
+  "index.qmd": {
+    "index.html": "25994c81"
+  },
+  "about.qmd": {
+    "about.html": "2bc39923"
+  },
+  "blog.qmd": {
+    "blog.html": "f6d82475"
+  },
+  "blog/post-with-code/index.qmd": {
+    "index.html": "2b48c1df"
+  },
+  "blog/welcome/index.qmd": {
+    "index.html": "84770a1c"
+  },
+  "research.qmd": {
+    "research.html": "76ad3a8e"
+  },
+  "research/rule-bending-caseworkers/index.markdown": {
+    "index.html": "75f1187a"
+  },
+  "research/replication-motivation/index.md": {
+    "index.html": "b48a85b3"
+  },
+  "research/replication-motivation/index.qmd": {
+    "index.html": "44bf17e0"
+  },
+  "research/rule-bending-caseworkers/index.qmd": {
+    "index.html": "8742e4da"
+  },
+  "blog/human-scale-principle/index.qmd": {
+    "index.html": "2c3e5118"
+  },
+  "blog/bayesian-rct-presentation/index.markdown": {
+    "index.html": "7ed80e56"
+  },
+  "blog/toolbox-rct/index.markdown": {
+    "index.html": "fba5aa52"
+  },
+  "blog/bayesian-rct-presentation/index.qmd": {
+    "index.html": "a5baef37"
+  },
+  "blog/toolbox-rdd/index.qmd": {
+    "index.html": "9e519cbf"
+  },
+  "blog/toolbox-rct/index.qmd": {
+    "index.html": "684589db"
+  },
+  "blog/bayesian-rct-spec-priors/index.markdown": {
+    "index.html": "6401f4d4"
+  },
+  "blog/bayesian-rct-spec-priors/index.qmd": {
+    "index.html": "586bae0f"
+  },
+  "blog/dot-dot-dot/index.markdown": {
+    "index.html": "f0f67237"
+  },
+  "blog/dot-dot-dot/index.qmd": {
+    "index.html": "3ae7d066"
+  },
+  "blog/bayesian-rct-validation/index.markdown": {
+    "index.html": "7b4f3372"
+  },
+  "blog/bayesian-rct-validation/index.qmd": {
+    "index.html": "f80c97d3"
+  }
+}

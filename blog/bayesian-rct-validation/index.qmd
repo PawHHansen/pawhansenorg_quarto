@@ -1,0 +1,201 @@
+---
+title: "Bayesian analysis of a randomized controlled trial II: Defining and validating
+  the model"
+author: 'Paw Hansen'
+date: '2023-07-02'
+description: "Part two of my three-part series on Bayesian analysis of randomized controlled trials. You've built a model but is it any good?"
+image: "featured.jpg"
+categories: [Bayesian modeling]
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+The aim of this post is to _validate_ our models. Basically, we'll be asking two questions:
+
+1. How well does the model fit the data?
+2. How well does the model fit _new_ data?
+
+For the first question, we will do posterior predictive simulation to see if data simulated from the model has features similar to the original data (which was used to fit the model). 
+
+For the second question, we will 
+
+The packages we'll be using: 
+
+```{r packages}
+
+library(tidyverse)
+library(rstanarm)
+library(bayesrules)
+library(tidybayes)
+library(bayesplot)
+library(kableExtra)
+library(patchwork)
+
+theme_set(theme_minimal(base_size = 12))
+
+```
+
+```{r models, echo=FALSE, warning=FALSE, message=FALSE}
+
+# Set the seed for reproducibility
+set.seed(1407)
+
+# Number of participants in each group
+n_control <- 450
+n_treat <- 450
+
+# True probabilities of failing the test for each group
+p_control <- 0.55
+p_treatment <- 0.45
+
+# Simulate data
+fake <- tibble(
+  condition = rep(c("Control", "Treatment"), 
+                  c(n_control, n_treat))) |> 
+  mutate(fail_test = ifelse(condition == "Control", 
+                     rbinom(n_control, 1, p_control), 
+                     rbinom(n_treat, 1, p_treatment))) 
+
+fail_model_weakinf <- 
+  stan_glm(fail_test ~ condition,
+           data = fake, family = binomial,
+           prior = normal(location = 0, 
+                          scale = 2.5, 
+                          autoscale = T),
+           prior_intercept = normal(location = 0, 
+                                    scale = 2.5, 
+                                    autoscale = T),
+           chains = 4, iter = 5000*2, seed = 1407,
+           prior_PD = TRUE,
+           refresh = 0)
+
+prior_intercept <-
+  normal(location = -2.775558e-17,
+         scale = 0.2027326)
+
+prior_treat <-
+  normal(location = -0.08125946,
+         scale = 0.04062973)
+
+fail_model_evidence <- 
+  stan_glm(fail_test ~ condition,
+           data = fake, family = binomial,
+           prior_intercept = prior_intercept,
+           prior = prior_treat,
+           chains = 4, iter = 5000*2, seed = 1407,
+           prior_PD = TRUE,
+           refresh = 0)
+
+```
+
+Recall our two models from my previous post:
+
+* In one model, I used a _weakly informative prior_ 
+* In another, model I used an _evidence-based prior_
+
+
+Before moving on, we should check the stability of our simulations. 
+
+For the model using a weakly informative prior...
+
+```{r plot-diag-weak, warning=FALSE, message=FALSE, fig.cap="Diagnostic plots for the stability of our simulation results concerning the model using weakly informative priors. All looks good."}
+
+# MCMC trace, density, & autocorrelation plots - weakly informative prior 
+p1 <- mcmc_trace(fail_model_weakinf) + scale_x_continuous(breaks = c(0, 5000))
+
+p2 <- mcmc_dens_overlay(fail_model_weakinf)
+p3 <- mcmc_acf(fail_model_weakinf)
+
+p1 / p2 / p3 + plot_annotation(tag_levels = 'A')
+
+```
+
+All looks good. For the evidence based model...
+
+```{r plot-diag-evidence, warning=FALSE, message=FALSE, fig.cap="Diagnostic plots for the stability of our simulation results concerning the evidence-based model. All looks good."}
+
+# MCMC trace, density, & autocorrelation plots - evidence based model
+p4 <- mcmc_trace(fail_model_evidence) + scale_x_continuous(breaks = c(0, 5000))
+p5 <- mcmc_dens_overlay(fail_model_evidence)
+p6 <- mcmc_acf(fail_model_evidence)
+
+p1 / p2 / p3 + plot_annotation(tag_levels = 'A')
+
+```
+
+same. 
+
+All set, let's get on with model validation!
+
+### Check #1: How well does the model fit the data?
+
+To see this, we simulate 100 data sets from our posterior distribution. For each data set, we then calculate the number of failed tests to see if this matches up with that of the original data.  
+
+```{r}
+calc_prop_fail <- function(x) {mean(x == 1)
+}
+
+```
+
+```{r pp-checks, warning=FALSE, message=FALSE, fig.cap= "Posterior predictve checks of the two models. Histograms show the proportion of failed students in a number of simulated datasets based on each model, whereas the dark blue lines mark the real proportion of failed students in the data. (a) With a weakly informative prior, the simulated data sets are unwilling to say much about the share of failed reading tests. (b) In contrast, using an evidence-based prior results in posterior simulations that resemble the original data well."}
+
+pp_check_model_weakinf <- 
+  pp_check(fail_model_weakinf, 
+           plotfun = "stat", 
+           stat = "calc_prop_fail",
+           seed = 2307) + 
+  xlab("Share of failed reading tests") +
+  xlim(0,1) + 
+  theme(legend.position = "none")
+
+pp_check_model_evidence <-
+  pp_check(fail_model_evidence, 
+           plotfun = "stat", 
+           stat = "calc_prop_fail",
+           seed = 2307) + 
+  xlab("Share of failed reading tests") +
+  xlim(0,1) + 
+  theme(legend.position = "none")
+
+pp_check_model_weakinf / pp_check_model_evidence + plot_annotation(tag_levels = 'A')
+
+```
+
+### Check #2: How well does the model fit _new_ data?
+
+Because we are working with a categorical outcome, we can be _either_ right or wrong. The question is how often are we right? 
+
+```{r}
+set.seed(0407)
+
+class_sum_weakinf <- 
+  classification_summary(model = fail_model_weakinf, data = fake, cutoff = 0.5) 
+
+class_sum_evidence <- 
+  classification_summary(model = fail_model_evidence, data = fake, cutoff = 0.5) 
+
+```
+
+* **overall accuracy** captures the proportion of all Y observations that are accurately classified
+* **sensitivity (true positive rate)** captures the proportion of Y = 1 observations that are accurately classified 
+* **specificity (true negative rate)** the proportion of Y = 0 observations that are accurately classified:
+
+```{r tab-perf-measures, warning=FALSE, message=FALSE, echo=FALSE}
+bind_cols(class_sum_weakinf$accuracy_rates, class_sum_evidence$accuracy_rates) |> 
+  rownames_to_column(var = "Measure") |> 
+  mutate(Measure = c("Sensitivity (true positive rate)",
+                     "Specificity (true negative rate)", 
+                     "Overall accuracy")) |> 
+  kable(col.names = c("Measure", 
+                      "Weakly informative priors",
+                      "Evidence-based priors"),
+        caption = "How well do the two models fit the data?",
+        digits = 2) |> 
+  kable_styling(full_width = F)
+```
+

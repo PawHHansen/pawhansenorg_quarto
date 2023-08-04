@@ -1,0 +1,21 @@
+[
+  {
+    "listing": "/blog.html",
+    "items": [
+      "/blog/bayesian-rct-presentation/index.html",
+      "/blog/bayesian-rct-spec-priors/index.html",
+      "/blog/bayesian-rct-validation/index.html",
+      "/blog/dot-dot-dot/index.html",
+      "/blog/toolbox-rdd/index.html",
+      "/blog/toolbox-rct/index.html",
+      "/blog/human-scale-principle/index.html"
+    ]
+  },
+  {
+    "listing": "/research.html",
+    "items": [
+      "/research/replication-motivation/index.html",
+      "/research/rule-bending-caseworkers/index.html"
+    ]
+  }
+]

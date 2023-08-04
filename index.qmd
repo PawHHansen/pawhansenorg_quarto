@@ -1,0 +1,29 @@
+---
+title: "Paw Hansen"
+subtitle: "Social scientist and researcher"
+image: paw.jpeg
+about: 
+  template: trestles
+  image-width: 15em
+  image-shape: round
+  links:
+    - icon: envelope
+      text: "Email"
+      href: "mailto:paw.hansen@ku.dk"
+    - icon: github
+      text: "GitHub"
+      href: https://github.com/PawHHansen 
+    - icon: twitter
+      text: "Twitter"
+      href: https://twitter.com/PawHHansen 
+    - text: "Google Scholar"
+      href: https://scholar.google.dk/citations?user=EWSaCHoAAAAJ&hl=da&oi=ao 
+---
+
+Hi, I'm Paw! Good to see you.
+
+I'm a researcher at the [The Danish National Center for Social Science Research](https://www.vive.dk/EN/) where I work on I do experimental behavioral science research related to the public sector. Currently, I study how frontline workers make professional judgements, and how these affect clients. You can find examples of my research [here](link). 
+
+My research interests also include data visualization, Bayesian modeling, and how to communicate statistics and evidence to practitioners in compelling and intuitive ways. I occasionally [blog](link) about these topics.  
+
+When I'm out of office, I enjoy sourdough baking, having coffee with friends, and reading gloomy novels in the evenings. I live in Copenhagen with my wife and our  boy, Jakob.

@@ -1,0 +1,187 @@
+---
+title: "The policy evaluator’s toolbox: Presenting results from randomized experiments"
+author: "Paw Hansen"
+date: '2023-05-24'
+categories: [statistical analysis]
+image: featured.jpg
+description: 'Sensible out-of-the-box tables and plots for your next randomized controlled trial'
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F) 
+```
+
+In this series of blog posts, I go over some of the most common experimental designs, including natural experiments such as difference-in-difference, regression discontinuity designs, and so on. 
+
+The goal is to provide you with some sensible default plots and tables you can use when writing up your next experimental analysis. For more detail on the technicalities of the individual designs, check out the sources I link to at the bottom of this post. 
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+# Packages we'll be using today
+library(tidyverse)
+library(modelsummary)
+library(marginaleffects)
+library(kableExtra)
+library(ggsci)
+
+theme_set(theme_minimal(base_size = 12))
+
+```
+
+Today: RCTs. What better way to kick off a series on experimental designs than with a truly randomized experiment? To get started, I'll simulate some fake data we can work with. @tbl-peak shows a peak of the simulated data.  
+
+```{r}
+#| label: tbl-peak
+#| tbl-cap: "A peak at the simulated data"
+
+set.seed(2707)
+
+num_people <- 1000
+treat_effect <- 4.5
+
+dat <- 
+  tibble(
+  age = sample(18:75, num_people, replace = T), 
+  female = sample(c(0, 1), num_people, replace = T), 
+  non_western = sample(c(0, 1), num_people, replace = T, prob = c(.85, .15)), 
+  mu = 25 + .5 * age + 8 * female -10 * non_western
+)
+
+
+dat <- 
+  dat |> 
+  mutate(condition = sample(c("Control", "Treatment"), size = num_people, replace = TRUE), 
+         outcome = case_when(
+           condition == "Control" ~ rnorm(num_people, mean = mu, sd = 1),
+           condition == "Treatment" ~ rnorm(num_people, mean = mu + treat_effect, sd = 1))
+         ) |> 
+  select(-mu) |> 
+  mutate(female = case_when(
+    female == 1 ~ "Female",
+    female == 0 ~ "Male", 
+    TRUE ~ "Trouble")) |>
+  mutate(non_western = case_when(
+    non_western == 1 ~ "Non-western",
+    non_western == 0 ~ "Western",
+    TRUE ~ "Trouble"))
+
+head(dat) |>
+  kbl()
+
+```
+
+### Presenting descriptives
+
+First, let's make a table to see if our two groups are balanced on average. See @tbl-balance. This would be your typical "Table 1" if you were writing a research paper.  
+
+```{r}
+#| label: tbl-balance
+#| tbl-cap: "Means of covariates across experimental conditions"
+
+dat_summary <- 
+  dat |> 
+  select(
+    Age = age,
+    Female = female,
+    'Non-Western' = non_western,
+    condition,
+    -outcome,
+  )
+  
+datasummary_balance(~condition, 
+                    data = dat_summary)
+```
+
+Alternatively, you could reserve that table for an appendix and instead present a table showing descriptives of the full sample. @tbl-descriptives shows an examples. 
+
+```{r}
+#| label: tbl-descriptives
+#| tbl-cap: "Means of covariates for the full sample"
+
+dat_summary <- 
+  dat |> 
+  select(
+    Age = age,
+    Female = female,
+    'Non-Western' = non_western,
+    Condition = condition,
+    -outcome,
+  )
+
+datasummary_balance(~1, 
+                    data = dat_summary)
+  
+
+```
+
+### Presenting results
+
+After presenting evidence that your randomization was successful, you should move on to present your results. This could be either as a regression table (@tbl-results) or as a figure (@fig-exp). 
+
+```{r}
+#| label: tbl-results
+#| tbl-cap: "Outcome across experimental conditions (OLS estimates)"
+
+model_basic <-
+  lm(outcome ~ condition, data = dat)
+
+model_cov_adj <-
+  lm(outcome ~ ., data = dat)
+
+modelsummary(models = list(
+  "Unadjusted" = model_basic,
+  "Covariate adjusted" = model_cov_adj),
+  coef_rename = c(
+    "age" = "Age (in years)",
+    "femaleMale" = "Sex: Male",
+    "conditionTreatment" = "Condition: Treatment",
+    "non_westernWestern" = "Origin: Western")
+  )
+
+```
+
+I personally prefer @fig-exp because in addition to showing the model (i.e. the two group averages), it also conveys information about the full distribution of data for both groups.  
+
+```{r}
+#| label: fig-exp
+#| fig-cap: "Outcome across experimental conditions"
+
+means <-
+  dat %>%
+  group_by(condition) %>%
+  summarise(avg = mean(outcome),
+            sd = sd(outcome)) 
+
+avg_control <-
+  means %>%
+  filter(condition == "Control") %>%
+  select(avg)
+
+dat %>%
+  ggplot(aes(condition, outcome)) +
+  geom_jitter(aes(color = condition), alpha = .4) +
+  geom_hline(yintercept = avg_control$avg, linetype = "dashed", color = "grey50") +
+  geom_pointrange(data = means, aes(x = condition, 
+                                    y = avg, 
+                                    ymin = avg + sd, 
+                                    ymax = avg - sd)) +
+  labs(color = "Condition", 
+       x = NULL, 
+       y = "Outcome") +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "none")
+
+```
+
+### Final thoughts: Presenting results from randomized experiments
+
+
+### Cool! Where can I learn more?
+
+* Coppock, A. (2021). Visualize as you randomize. _Advances in experimental political science_. .

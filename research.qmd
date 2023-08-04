@@ -1,0 +1,13 @@
+---
+title: "Research"
+subtitle: "Research I am currently working on or have recently finished."
+listing:
+  contents: research
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+page-layout: full
+title-block-banner: true
+---

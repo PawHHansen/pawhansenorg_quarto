@@ -1,0 +1,184 @@
+---
+title: "Dot-dot-dot: Three dotplots to stake your life on"
+description: 'Celebrating the beauty of dots and points in plotting data.'
+author: "Paw Hansen"
+date: '2023-06-09'
+image: "featured.jpg"
+categories: [statistical analysis]
+editor_options: 
+  chunk_output_type: console
+---
+
+Here is a quick post on a few basic plots you can make with `geom_point`. The goal is simply to celebrate _the dot_ as a way of graphing data. Who knows? Maybe someday there will be a post on the line too! For all plots, we will be working with the `gapminder` data. 
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(broom)
+library(modelsummary)
+library(ggsci)
+library(gapminder)
+
+theme_set(theme_minimal())
+data("gapminder")
+```
+
+### Plot 1: The Cleveland dotplot 
+
+To get started, let's make a classic Cleveland dot plot. These are good for providing at quick glance of summary statistics, here the average life expectancy for each continent:  
+
+```{r}
+#| message: false
+#| warning: false
+#| label: fig-life-exp
+#| fig-cap: "Mean life expectancy across continents"
+
+gapminder %>%
+  group_by(continent) %>%
+  summarise(mean = mean(lifeExp, na.rm = T)) %>%
+  mutate(continent = fct_reorder(continent, mean)) %>%
+  ggplot(aes(mean, continent)) + 
+  geom_point(size = 4) +
+  labs(x = "Years",
+       y = NULL,
+       caption = "Source: gapminder")
+
+```
+
+One small tweak could be to highlight one of the continents. For instance, suppose your analysis was about explaining what's going on with one particular observation. In particular, when looking at the above plot, Africa, seems to be falling behind the other continents. An easy way to highlight that would be using color: 
+
+```{r}
+#| message: false
+#| warning: false
+#| label:  fig-africa 
+#| fig-cap: "What's the matter with Africa? Mean life expectancy across continents"
+
+gapminder %>%
+  group_by(continent) %>%
+  summarise(mean = mean(lifeExp, na.rm = T)) %>%
+  mutate(continent = fct_reorder(continent, mean)) %>%
+  ggplot(aes(mean, continent)) + 
+  geom_point(aes(color = I(ifelse(continent == "Africa", 
+                                  "firebrick", 
+                                  "black"))), 
+             size = 4) +
+  labs(x = "Years",
+       y = NULL, 
+       caption = "Source: gapminder")
+
+```
+
+This kind of graph is en easy but powerfull way to spark initial curiosity with readers, which is a key part of [storytelling with data](https://clauswilke.com/dataviz/telling-a-story.html)
+
+### Plot 2: The dot-and-whisker
+Next up, we have the dot-and-whisker plot. Often, researchers and data analyst will report model estimates using tables. Some scholars, teasingly, call these 'BUTONs': _Big Ugly Table of Numbers_. 
+
+A simple way to improve presentation is to make a dot-and-whisker plot of the model estimates and corresponding uncertainties. Let's fit a model and make a plot:
+
+```{r}
+#| message: false
+#| warning: false
+#| label:  model
+#| code-fold: false
+
+# Rescale population and GDP per capita to more meaningfull scale. 
+gapminder <- 
+  gapminder %>% 
+  mutate(population_scaled = pop/100000000,
+         gdpPercap_scaled = gdpPercap/10000)
+
+# The fit model
+gap_model <- 
+  lm(lifeExp ~ continent + year +  population_scaled + gdpPercap_scaled, 
+     data = gapminder)
+
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| label: fig-life-exp-world
+#| fig-cap: "Explaining life expectancy across the world"
+
+gap_model %>%
+  tidy(conf.int = T) %>%
+  filter(term != "(Intercept)") %>%
+  mutate(term = str_replace_all(term, 
+                                "continent", 
+                                "Continent: "),
+         term = str_to_title(term),
+         term = fct_reorder(term, 
+                            estimate)) %>%
+  ggplot(aes(estimate, 
+             term, 
+             xmin = conf.low, 
+             xmax = conf.high)) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed",
+             color = "grey") + 
+  geom_pointrange() + 
+  labs(y = NULL, 
+       x = "Difference in years")
+
+```
+
+For reference, this is what the same results would have looked like if we had used a standard regression table:
+
+```{r}
+#| label: tbl-modelsummarylifeexp
+#| tbl-cap: "Explaining life expectancy"
+
+modelsummary(models = list("Life expectancy" = gap_model), 
+             fmt = fmt_significant(2),
+             stars = T,
+             gof_map = c("nobs", "rmse","r.squared"))
+  
+
+```
+
+The dot-and-whisker plot helps readers quickly compare the model estimates and their corresponding uncertainty. 
+
+### Plot 3: The dumbell chart
+
+Finally, the _dumbell chart_ can be useful when the goal is to highlight differences, especially across groups. Let's make one to compare the change in mean life expectancy from the 1950s to the 2000s across all five continents:   
+
+```{r}
+#| message: false
+#| warning: false
+#| label: fig-dumbell
+#| fig-cap: "Mean life expectancy in 1950s and 2000s"
+
+gapminder |> 
+  mutate(decade = factor(year %/% 10 * 10)) |> 
+  filter(decade %in% c(1950, 2000)) |> 
+  group_by(continent, decade) |> 
+  summarize(lifeexp = mean(lifeExp, na.rm = T)) |> 
+  mutate(continent = fct_reorder(continent, lifeexp)) |> 
+  ggplot(aes(lifeexp, continent, 
+             group = decade)) + 
+  geom_line(aes(group = continent), 
+            color = "grey50", 
+            linewidth = 1) + 
+  geom_point(aes(color = continent), 
+             size = 5) + 
+  scale_color_brewer(type = "qual", palette = "Set1") + 
+  labs(x = "Life expectancy (years)",
+       y = NULL,
+       caption ="Source: gapminder") + 
+  theme(legend.position = "none")
+
+```
+
+The graph makes it easy to see that Oceania has the highest average but Asia has seen the highest growth. This might be a useful "Figure 1"; illustrating a puzzle which your paper then tries to explain.  
+
+### Final thoughts: Three dotplots to stake your life on
+
+Points or dots can be a useful way of plotting data. In this post, I have shown you three different and quite versatile plots you can use in your next analysis. 
+
+### Cool! Where can I learn more?
+
+* Healy, Kieran. _Data visualization: a practical introduction_. Princeton University Press, 2018.
