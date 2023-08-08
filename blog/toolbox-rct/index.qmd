@@ -72,7 +72,7 @@ dat <-
     TRUE ~ "Trouble"))
 
 head(dat) |>
-  kbl()
+  kbl(digits = 2)
 
 ```
 
@@ -98,7 +98,7 @@ datasummary_balance(~condition,
                     data = dat_summary)
 ```
 
-Alternatively, you could reserve that table for an appendix and instead present a table showing descriptives of the full sample. @tbl-descriptives shows an examples. 
+Alternatively, you could reserve that table for an appendix and instead present a table showing descriptives of the full sample. @tbl-descriptives shows an example. 
 
 ```{r}
 #| label: tbl-descriptives
@@ -179,8 +179,10 @@ dat %>%
 
 ```
 
-### Final thoughts: Presenting results from randomized experiments
+### Interactions?
 
+### Final thoughts: Presenting results from randomized experiments
+RCTs are commonly used to test for causal relationships and knowing the basics in terms of presentation is therefore essential. In this post, I have shown how to use R to calculate and present some of the most common tables and figures used for RCTs. Now you're ready to present your next RCT!
 
 ### Cool! Where can I learn more?
 
