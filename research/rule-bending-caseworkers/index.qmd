@@ -14,15 +14,15 @@ links:
 
 ---
 
-My first article is out in the *International Public Management Journal*! 
+My first article is out in the [International Public Management Journal](https://www.tandfonline.com/doi/full/10.1080/10967494.2022.2138660)! 
 
 Here's what it's about: When facing a disobedient client, caseworkers are often required to impose sanctions. But even when sanctions are explicitly required by law, research shows that caseworkers may turn a blind eye. Why so? 
 
 The study asks how certain clients can merit themselves to avoid sanctioning.
 
-Drawing from literature on deservingness, I propose that clients can avoid sanctions if they seem (1) needy, (2) hard working, or (3) resourceful.
+Drawing from existing literature, I propose that clients can avoid sanctions if they seem (1) needy, (2) hard working, or (3) resourceful.
 
-To test these expectations, I ran a conjoint vignette experiment among Danish unemployment caseworkers. In the experiment, I presented each of 407 caseworkers with 3 fictive client descriptions and asked if the caseworker would santion that client. Within each client description, I randomly assigned several pieces of information concerning the three types of deserving clients above.  
+To test these expectations, I ran a conjoint vignette experiment among Danish unemployment caseworkers. In the experiment, I presented each of 407 caseworkers with 3 fictive client descriptions and asked if the caseworker would sanction that client. Within each client description, I randomly assigned several pieces of information concerning the three types of deserving clients above.  
 
 Importantly, according to policy rules, _all_ clients should have been sanctioned, yet for many of the client profiles caseworkers were unwilling to impose sanctions.  
 
@@ -34,4 +34,4 @@ Here is key figure from the paper:
 
 ![Causal effect of various client attributes on caseworker sanctioning](featured.jpg){#fig-rule-bending}
 
-You can download a preprint of the article using the botton above. Or find the the published version [here](https://www.tandfonline.com/doi/full/10.1080/10967494.2022.2138660). 
+You can download a preprint of the article [here](https://www.pawhansen.org/research/rule-bending-caseworkers/rule_bending_preprint.pdf).  
