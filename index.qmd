@@ -22,7 +22,7 @@ about:
 
 Hi, I'm Paw! Good to see you.
 
-I'm a researcher at the [The Danish National Center for Social Science Research](https://www.vive.dk/EN/) where I work on I do experimental behavioral science research related to the public sector. Currently, I study how frontline workers make professional judgements, and how these affect clients. You can find examples of my research [here](link). 
+I'm a researcher at the [The Danish Center for Social Science Research](https://www.vive.dk/EN/) where I work on I do experimental behavioral science research related to the public sector. Currently, I study how frontline workers make professional judgements, and how these affect clients. You can find examples of my research [here](link). 
 
 My research interests also include data visualization, Bayesian modeling, and how to communicate statistics and evidence to practitioners in compelling and intuitive ways. I occasionally [blog](link) about these topics.  
 

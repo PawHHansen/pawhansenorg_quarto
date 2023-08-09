@@ -418,7 +418,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>What is the probability that our risk reduction lies within the ROPE? Figure <a href="#fig-post-sim-2">Figure&nbsp;2 (b)</a>, shows a so-called quantile function, plotting the potential risk reductions on the x-axis and the inverse cumulative probability on the y-axis. Substantially, the inverse cumulative probability describes the probability of the risk reduction being greater than the number on the x-axis.</p>
 <p>Looking at the figure, we see that the probability is about 13. Is this a lot or a little? Well, that depends…</p>
 <p>Of course 13 percent, or about 1-in-8, does not sound like a lot. But suppose that running the intervention is really cheap. Then, policy makers may want to “roll the dice” and see what happens. After all, the probability that the effect size is greater than 15 percent is small, but the probability that the effect size is at least 5 percent is 98 percent!</p>
-<p>The point is that when doing Bayesian analysis, we do not bake decision-making into the analysis, such as saying that the treatment “worked” because <em>p</em>&lt;0.05). Instead, we live with the uncertainty; estimating the effect size and uncertainties the best we can, and then leave the rest up to stakeholders.</p>
+<p>The point is that when doing Bayesian analysis, we do not bake decision-making into the analysis, such as saying that the treatment “worked” because <em>p</em> happened to be &lt;0.05. Instead, we live with the uncertainty; estimating the effect size and uncertainties the best we can, and then leave the rest up to stakeholders.</p>
 <div>
 <details>
 <summary>Code</summary>
@@ -484,14 +484,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>[1] 0.12675</code></pre>
 </div>
 </div>
-<p>As a final tip, interpreting a quantile function may be tricky to non-technical audiences. If I were advising, say, a politician, I might prefer to present some meaningful risk reductions and then simply present these in a small table:</p>
-<div id="tbl-arr-prob" class="cell tbl-parent quarto-layout-panel anchored">
-<div class="panel-caption table-caption">
-<p><strong>?(caption)</strong></p>
-</div>
-<div class="quarto-layout-row quarto-layout-valign-top">
-<div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
+<p>As a final tip, interpreting a quantile function may be tricky to non-technical audiences. If I were advising, say, a politician, I might prefer to present some meaningful risk reductions and then simply present these in a small table such as <a href="#tbl-post-probs">Table&nbsp;1</a>:</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="tbl-post-probs" class="anchored">
 <table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Table&nbsp;1: Posterior probabilities of various minimum effect sizes</caption>
 <thead>
 <tr class="header">
 <th style="text-align: right;" data-quarto-table-cell-role="th">Minimum risk reduction</th>
@@ -518,12 +516,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </div>
-</div>
-<div class="quarto-layout-row quarto-layout-valign-top">
-<div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
 
 
-</div>
 </div>
 </div>
 </section>

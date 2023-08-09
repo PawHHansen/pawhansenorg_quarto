@@ -271,7 +271,7 @@ Looking at the figure, we see that the probability is about `r secret_prob`. Is 
 
 Of course `r secret_prob` percent, or about 1-in-8, does not sound like a lot. But suppose that running the intervention is really cheap. Then, policy makers may want to "roll the dice" and see what happens. After all, the probability that the effect size is greater than 15 percent is small, but the probability that the effect size is at least 5 percent is `r round(mean(abs_rr$abs_rr > .05) * 100, 0)` percent!
 
-The point is that when doing Bayesian analysis, we do not bake decision-making into the analysis, such as saying that the treatment "worked" because _p_<0.05). Instead, we live with the uncertainty; estimating the effect size and uncertainties the best we can, and then leave the rest up to stakeholders.  
+The point is that when doing Bayesian analysis, we do not bake decision-making into the analysis, such as saying that the treatment "worked" because _p_ happened to be <0.05. Instead, we live with the uncertainty; estimating the effect size and uncertainties the best we can, and then leave the rest up to stakeholders.  
 
 ```{r}
 #| label: fig-post-sim
@@ -316,9 +316,12 @@ Of course, in addition to eyeballing the graph, we can ask R to extract the exac
 mean(abs_rr$abs_rr > .15)
 ```
 
-As a final tip, interpreting a quantile function may be tricky to non-technical audiences. If I were advising, say, a politician, I might prefer to present some meaningful risk reductions and then simply present these in a small table:
+As a final tip, interpreting a quantile function may be tricky to non-technical audiences. If I were advising, say, a politician, I might prefer to present some meaningful risk reductions and then simply present these in a small table such as @tbl-post-probs:
 
 ```{r tbl-arr-prob, warning=FALSE, message=FALSE, echo=FALSE}
+#| label: tbl-post-probs
+#| tbl-cap: "Posterior probabilities of various minimum effect sizes"
+
 tibble(
     rr = c(.05, .1, .15, .20),
     prob = c(mean(abs_rr$abs_rr > .05),

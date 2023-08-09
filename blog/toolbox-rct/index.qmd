@@ -28,7 +28,7 @@ library(tidyverse)
 library(modelsummary)
 library(marginaleffects)
 library(kableExtra)
-library(ggsci)
+library(broom)
 
 theme_set(theme_minimal(base_size = 12))
 
@@ -49,27 +49,22 @@ dat <-
   tibble(
   age = sample(18:75, num_people, replace = T), 
   female = sample(c(0, 1), num_people, replace = T), 
-  non_western = sample(c(0, 1), num_people, replace = T, prob = c(.85, .15)), 
-  mu = 25 + .5 * age + 8 * female -10 * non_western
-)
+  non_western = sample(c(0, 1), num_people, 
+                       replace = T, prob = c(.85, .15)), 
+  condition = sample(0:1, size = num_people, 
+                     replace = TRUE),
+  mu = 10 + .5 * age + 8 * female - 10 * non_western + 
+    treat_effect * condition + .25 * (age*condition),
+  outcome = rnorm(num_people, mu, 2.5)
+) |> 
+  select(-mu)
 
-
+# Recode into factors 
 dat <- 
   dat |> 
-  mutate(condition = sample(c("Control", "Treatment"), size = num_people, replace = TRUE), 
-         outcome = case_when(
-           condition == "Control" ~ rnorm(num_people, mean = mu, sd = 1),
-           condition == "Treatment" ~ rnorm(num_people, mean = mu + treat_effect, sd = 1))
-         ) |> 
-  select(-mu) |> 
-  mutate(female = case_when(
-    female == 1 ~ "Female",
-    female == 0 ~ "Male", 
-    TRUE ~ "Trouble")) |>
-  mutate(non_western = case_when(
-    non_western == 1 ~ "Non-western",
-    non_western == 0 ~ "Western",
-    TRUE ~ "Trouble"))
+  mutate(condition = ifelse(condition == 1, "Treatment", "Control")) |> 
+  mutate(female = ifelse(female == 1, "Female", "Male")) |>
+  mutate(non_western = ifelse(non_western == 1, "Non-western", "Western"))
 
 head(dat) |>
   kbl(digits = 2)
@@ -132,7 +127,7 @@ model_basic <-
   lm(outcome ~ condition, data = dat)
 
 model_cov_adj <-
-  lm(outcome ~ ., data = dat)
+  lm(outcome ~ . + age*condition, data = dat)
 
 modelsummary(models = list(
   "Unadjusted" = model_basic,
@@ -141,7 +136,8 @@ modelsummary(models = list(
     "age" = "Age (in years)",
     "femaleMale" = "Sex: Male",
     "conditionTreatment" = "Condition: Treatment",
-    "non_westernWestern" = "Origin: Western")
+    "non_westernWestern" = "Origin: Western",
+    "age:conditionTreatment" = "Age x Treatment")
   )
 
 ```
@@ -179,11 +175,56 @@ dat %>%
 
 ```
 
-### Interactions?
+### Presenting interactions
+
+Finally, we might be interested in plotting some type of interaction with our treatment. The basic recipe is to define some values for each of the predictors and then use those to predict the outcome. We can use `augment()` from the `broom` package to do so. 
+
+```{r}
+
+pred_matrix <- 
+  crossing(
+    condition = c("Control", "Treatment"),
+    age = 15:75,
+    female = "Female",
+    non_western = "Western"
+  )
+
+preds <-
+  augment(model_cov_adj, newdata = pred_matrix, se_fit = TRUE) |> 
+  mutate(.lwr = .fitted - 1.96 *.se.fit,
+         .upr = .fitted + 1.96 *.se.fit)
+
+```
+
+With our predictions, we can make a basic graph. 
+
+```{r}
+#| label: fig-interact
+#| fig-cap: "Comparing treatment effects across age for treated and non-treated units"
+
+preds |> 
+  ggplot(aes(age, .fitted, color = condition)) + 
+  geom_line() +
+  geom_line(aes(y = .lwr), lty = "dashed", linewidth = .25) + 
+  geom_line(aes(y = .upr), lty = "dashed", linewidth = .25) + 
+  scale_color_brewer(palette = "Set1") + 
+  geom_point(data = dat, aes(age, outcome), alpha = .1) + 
+  labs(x = "Age (in years)",
+       y = "Outcome") + 
+  annotate(geom = "text", label = "Treated units", x = 70, y = 65, color = "#377eb8") + 
+  annotate(geom = "text", label = "Control units", x = 70, y = 45, color = "#e41a1c") + 
+  theme(legend.position = "none")
+
+```
+
+Notice how this graphs the predicted outcome across age but for Western females only. Alternatively, we could average over predictions from different subgroups to calculate the _marginal effects_. The `marginaleffects` package has a nice suite of functions to help us do just that. 
 
 ### Final thoughts: Presenting results from randomized experiments
+
 RCTs are commonly used to test for causal relationships and knowing the basics in terms of presentation is therefore essential. In this post, I have shown how to use R to calculate and present some of the most common tables and figures used for RCTs. Now you're ready to present your next RCT!
 
 ### Cool! Where can I learn more?
 
-* Coppock, A. (2021). Visualize as you randomize. _Advances in experimental political science_. .
+* Coppock, A. (2021). Visualize as you randomize. _Advances in experimental political science_. 
+
+* Healy, K. (2018). _Data visualization: a practical introduction_. Princeton University Press.
