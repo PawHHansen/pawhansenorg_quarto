@@ -129,7 +129,7 @@ gap_model %>%
 For reference, this is what the same results would have looked like if we had used a standard regression table:
 
 ```{r}
-#| label: tbl-modelsummarylifeexp
+#| label: tbl-modelsummary-lifeexp
 #| tbl-cap: "Explaining life expectancy"
 
 modelsummary(models = list("Life expectancy" = gap_model), 
@@ -161,7 +161,7 @@ gapminder |>
   ggplot(aes(lifeexp, continent, 
              group = decade)) + 
   geom_line(aes(group = continent), 
-            color = "grey50", 
+            color = "grey80", 
             linewidth = 1) + 
   geom_point(aes(color = continent), 
              size = 5) + 

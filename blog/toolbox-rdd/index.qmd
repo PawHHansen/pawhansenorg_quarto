@@ -1,5 +1,5 @@
 ---
-title: "The policy evaluator's toolbox: Plotting your next regression discontinuity
+title: "The policy evaluator's toolbox: Presenting your next regression discontinuity
   analysis"
 author: "Paw Hansen"
 date: '2023-06-01'
