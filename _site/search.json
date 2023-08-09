@@ -88,7 +88,7 @@
     "href": "blog/bayesian-rct-spec-priors/index.html",
     "title": "Bayesian analysis of a randomized controlled trial I: Specifying the priors",
     "section": "",
-    "text": "Welcome to the first part of my three-part series on how to analyze randomized controlled trials (RCTs) using Bayesian thinking and methods. For this first post, I assume you have some basic understanding about what it means to be “working like a Bayesian”. If you are entirely new to Bayesian methods, check out the references at the bottom of the post.\nThe packages we’ll be using today:\nShow the code\nlibrary(tidyverse)\nlibrary(rstanarm)\nlibrary(tidybayes)\nlibrary(modelsummary)\nlibrary(kableExtra)\nlibrary(ggsci)\nlibrary(patchwork)\nlibrary(janitor)"
+    "text": "Welcome to the first part of my three-part series on how to analyze randomized controlled trials (RCTs) using Bayesian thinking and methods. For this first post, I assume you have some basic understanding about what it means to be “working like a Bayesian”. If you are entirely new to Bayesian methods, check out the references at the bottom of the post.\nPackages used in this post\nlibrary(tidyverse)\nlibrary(rstanarm)\nlibrary(tidybayes)\nlibrary(modelsummary)\nlibrary(kableExtra)\nlibrary(ggsci)\nlibrary(patchwork)\nlibrary(janitor)\n\ntheme_set(theme_minimal(base_size = 12))"
   },
   {
     "objectID": "blog/bayesian-rct-spec-priors/index.html#footnotes",

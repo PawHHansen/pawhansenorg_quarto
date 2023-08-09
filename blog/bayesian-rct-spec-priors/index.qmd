@@ -16,9 +16,11 @@ knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 
 Welcome to the first part of my three-part series on how to analyze randomized controlled trials (RCTs) using Bayesian thinking and methods. For this first post, I assume you have some basic understanding about what it means to be "working like a Bayesian". If you are entirely new to Bayesian methods, check out the references at the bottom of the post.
 
-The packages we'll be using today:
-
-```{r packages}
+```{r}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+#| warning: false
+#| message: false
 
 library(tidyverse)
 library(rstanarm)
@@ -29,11 +31,10 @@ library(ggsci)
 library(patchwork)
 library(janitor)
 
+theme_set(theme_minimal(base_size = 12))
+
 ```
 
-```{r plottheme, echo = F, warning = F, message = F}
-theme_set(theme_minimal(base_size = 12))
-```
 
 ### Simulation: A hypothetical experiment on dyslexia
 
@@ -41,7 +42,12 @@ To get us going, let's begin by simulating some fake data to analyse. The code b
 
 [^1]: Notice that although this is well-suited for our purpose, it actually represents a sub-optimal research design because we have discretized a variable for which it is fair to assume we would have a continuous measure, for example a test score for each student. By working with a dichotomous outcome, we are throwing away valuable information. Table 
 
-```{r sim-fake, warning=FALSE, message=FALSE}
+```{r}
+#| warning: false
+#| message: false
+#| label: sim-fake
+#| code-fold: false
+
 # Set the seed for reproducibility
 set.seed(1407)
 
@@ -63,11 +69,13 @@ fake <- tibble(
 
 ```
 
-```{r tbl-head-fake, warning=FALSE, message=FALSE, echo=FALSE}
+```{r}
+#| label: tbl-peak
+#| tbl-cap: "Peak at the first five rows in the data"
+
 fake |> 
   head(5) |> 
-  kable(caption = "Peak at the first five rows in the data") |> 
-  kable_styling(full_width = F)
+  kbl()
 ```
 
 ### Specifying a weakly informative prior
@@ -87,7 +95,8 @@ In code below, I 'hard-code' the default priors in `rstanarm` to make them expli
 Let's run the model:
 
 ```{r}
-
+#| code-fold: false
+ 
 fail_model_weakinf <- 
   stan_glm(fail_test ~ condition,
            data = fake, family = binomial,
@@ -106,6 +115,8 @@ fail_model_weakinf <-
 We can call `prior_summary()` to check that our priors have been specified correctly:
 
 ```{r}
+#| code-fold: false
+
 prior_summary(fail_model_weakinf)
 ```
 
@@ -113,7 +124,9 @@ Notice that because we set `autoscale = T` `rstanarm` adjusted the prior for the
 
 We can also plot these distributions to do a visual inspection, for example using histograms:
 
-```{r fig-weak-coef, fig.cap="Distribution of the two simulated parameters for our weakly-informative priors"}
+```{r}
+#| label: fig-prior-distr
+#| fig-cap: "Distribution of the two simulated parameters for our weakly-informative priors"
 
 plot(fail_model_weakinf, "hist")
 ```
@@ -126,7 +139,9 @@ First, we can simulate 1,000 new data sets based on our priors. For each, we the
 
 Let us make a histogram and see if the simulated data reflects this prior understanding:
 
-```{r fig-weak-prior-hist, fig.cap="Checking the intercept. Simulated proportion of failed reading tests, given a weakly informative prior. The distribution is roughly uniform; reflecting that we have little idea about how many students in the control group would fail the reading test."}
+```{r}
+#| label: fig-prior-weak
+#| fig-cap: "Checking the intercept. Simulated proportion of failed reading tests, given a weakly informative prior. The distribution is roughly uniform; reflecting that we have little idea about how many students in the control group would fail the reading test."
 
 set.seed(1407)
 
@@ -146,7 +161,10 @@ Looks right! The histogram *is* centered around .5 but also has a lot of variati
 
 Second, we can simulate 100 treatment effects and see if these match our prior understanding. Recall, that we believed the treatment effect would center around 0 but that it could have *a lot* of variation to it (sd = 5).
 
-```{r fig-weak-prior-lines, fig.cap="Checking the treatment effect. Simulated treatment effects from 100 simulated datasets, given a weakly-informative prior. Lines go in all directions; reflecting our weak prior beliefs about what the treatment effect could be. The proportion of failed students could be higher or lower in the treatment group. We don't really know."}
+```{r}
+#| label: fig-prior-weak-coef
+#| fig-cap: "Checking the treatment effect. Simulated treatment effects from 100 simulated datasets, given a weakly-informative prior. Lines go in all directions; reflecting our weak prior beliefs about what the treatment effect could be. The proportion of failed students could be higher or lower in the treatment group. We don't really know."
+
 set.seed(1407)
 
 fake |> 
@@ -174,6 +192,8 @@ $$ log(odds) = log(\frac{\pi}{1-\pi}) $$
 Let us apply the formula to our 40 and 60 percent range: 
 
 ```{r}
+#| code-fold: false
+
 # Define the range
 lower_prob <- 0.4
 upper_prob <- 0.6
@@ -191,18 +211,24 @@ prior_intercept <-
 Then our location for the intercept will be:
 
 ```{r}
+#| code-fold: false
+
 round(prior_intercept$location, 2)
 ```
 
 And the scale will be:
 
 ```{r}
+#| code-fold: false
+
 round(prior_intercept$scale, 2)
 ```
 
 Second, we need to consider the treatment effect. Say we think that the chance of failing the reading test could be anywhere from 15 percent lower for the treatment group to no difference at all. Expressed in odds, these differences are .85 and 1 respectively. Let's use that range to specify a prior for the treatment effect:
 
 ```{r}
+#| code-fold: false
+
 # Define the range
 lower_effect_odds <- 1
 upper_effect_odds <- .85
@@ -237,19 +263,24 @@ fail_model_evidence <-
 
 ```
 
-First we check that we specified the priors correctly:
+First we check that we specified the priors correctly. See @fig-prior-evidence-coef. 
 
 ```{r}
 prior_summary(fail_model_evidence) 
 ```
 
-```{r fig-evidence-coef, fig.cap="Distribution of the two simulated parameters for our evidence-based priors"}
+```{r}
+#| label: fig-prior-evidence-coef
+#| fig-cap: "Distribution of the two simulated parameters for our evidence-based priors."
+
 plot(fail_model_evidence, "hist")
 ```
 
 And then we can simulate 1,000 data sets using our prior distribution. For each draw, we calculate the share of students who failed the reading test (`.prediction == 1`) and plot those in a histogram:
 
-```{r fig-prior-evidence, fig.cap="Checking the intercept. Simulated proportion of failed reading tests for the full sample, given an evidence-based prior. The proportion centers more narrowly around .5; reflecting that we have stronger beliefs."}
+```{r}
+#| label: fig-prior-evidence-intercept
+#| fig-cap: "Checking the intercept. Simulated proportion of failed reading tests for the full sample, given an evidence-based prior. The proportion centers more narrowly around .5; reflecting that we have stronger beliefs."
 
 set.seed(1407)
 
@@ -270,7 +301,10 @@ Our histogram reflects our prior understanding since we believed the proportion 
 
 Second, for checking the prior treatment effect, we can make the same plot as before:
 
-```{r fig-prior-treat, fig.cap="Checking the treatment effect. Simulated treatment effects from 100 simulated datasets, given an evidence-based prior. Most lines slope downward; reflecting our belief that fewer students in the treatment group will fail the test."}
+```{r}
+#| label: fig-prior-evidence-treat
+#| fig-cap: "Checking the treatment effect. Simulated treatment effects from 100 simulated datasets, given an evidence-based prior. Most lines slope downward; reflecting our belief that fewer students in the treatment group will fail the test."
+
 set.seed(1407)
 
 fake |> 

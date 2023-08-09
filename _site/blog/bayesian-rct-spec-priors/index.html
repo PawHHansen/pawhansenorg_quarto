@@ -188,10 +188,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Welcome to the first part of my three-part series on how to analyze randomized controlled trials (RCTs) using Bayesian thinking and methods. For this first post, I assume you have some basic understanding about what it means to be “working like a Bayesian”. If you are entirely new to Bayesian methods, check out the references at the bottom of the post.</p>
-<p>The packages we’ll be using today:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Packages used in this post</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstanarm)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidybayes)</span>
@@ -199,15 +198,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggsci)</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <section id="simulation-a-hypothetical-experiment-on-dyslexia" class="level3">
 <h3 class="anchored" data-anchor-id="simulation-a-hypothetical-experiment-on-dyslexia">Simulation: A hypothetical experiment on dyslexia</h3>
 <p>To get us going, let’s begin by simulating some fake data to analyse. The code below simulates data for at hypothetical experiment in which students were randomly divided into either a treatment or control group. For context, let us imagine that the treatment is an intensive tutoring program. The outcome is dichotomous: did the students fail a reading test after the program ended or not? In our case, we’ll imagine that failing the test indicates dyslexia. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the seed for reproducibility</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -226,16 +225,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">fail_test =</span> <span class="fu">ifelse</span>(condition <span class="sc">==</span> <span class="st">"Control"</span>, </span>
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">rbinom</span>(n_control, <span class="dv">1</span>, p_control), </span>
 <span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">rbinom</span>(n_treat, <span class="dv">1</span>, p_treatment))) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">5</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-</div>
-<div id="tbl-head-fake" class="cell tbl-parent quarto-layout-panel anchored">
-<div class="panel-caption table-caption">
-<p>Table&nbsp;1: <strong>?(caption)</strong></p>
-</div>
-<div class="quarto-layout-row quarto-layout-valign-top">
-<div id="tbl-head-fake-1" class="quarto-layout-cell quarto-layout-cell-subref anchored" data-ref-parent="tbl-head-fake" style="flex-basis: 100.0%;justify-content: center;">
-<table class="table table-sm table-striped small" data-quarto-postprocess="true">
-<caption>(a) Peak at the first five rows in the data</caption>
+<div class="cell-output-display">
+<div id="tbl-peak" class="anchored">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Table&nbsp;1: Peak at the first five rows in the data</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;" data-quarto-table-cell-role="th">condition</th>
@@ -266,12 +267,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </div>
-</div>
-<div class="quarto-layout-row quarto-layout-valign-top">
-<div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: center;">
 
 
-</div>
 </div>
 </div>
 </section>
@@ -285,28 +282,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>In code below, I ‘hard-code’ the default priors in <code>rstanarm</code> to make them explicit but you could also type in <code>prior_intercept = default_prior_intercept()</code> and <code>prior = default_prior_coef()</code> for the intercept and the treatment effect respectively. Further, To allow <code>rstanarm</code> to tweak our scales in accordance with the data, we set <code>autoscale = TRUE</code>.</p>
 <p>Let’s run the model:</p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fail_model_weakinf <span class="ot">&lt;-</span> </span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(fail_test <span class="sc">~</span> condition,</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> fake, <span class="at">family =</span> binomial,</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior =</span> <span class="fu">normal</span>(<span class="at">location =</span> <span class="dv">0</span>, </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">scale =</span> <span class="fl">2.5</span>, </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">autoscale =</span> T),</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_intercept =</span> <span class="fu">normal</span>(<span class="at">location =</span> <span class="dv">0</span>, </span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">scale =</span> <span class="fl">2.5</span>, </span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">autoscale =</span> T),</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">5000</span><span class="sc">*</span><span class="dv">2</span>, <span class="at">seed =</span> <span class="dv">1407</span>,</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_PD =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>           <span class="at">refresh =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fail_model_weakinf <span class="ot">&lt;-</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(fail_test <span class="sc">~</span> condition,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> fake, <span class="at">family =</span> binomial,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior =</span> <span class="fu">normal</span>(<span class="at">location =</span> <span class="dv">0</span>, </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">scale =</span> <span class="fl">2.5</span>, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">autoscale =</span> T),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_intercept =</span> <span class="fu">normal</span>(<span class="at">location =</span> <span class="dv">0</span>, </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">scale =</span> <span class="fl">2.5</span>, </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">autoscale =</span> T),</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">5000</span><span class="sc">*</span><span class="dv">2</span>, <span class="at">seed =</span> <span class="dv">1407</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_PD =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>           <span class="at">refresh =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We can call <code>prior_summary()</code> to check that our priors have been specified correctly:</p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prior_summary</span>(fail_model_weakinf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prior_summary</span>(fail_model_weakinf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Priors for model 'fail_model_weakinf' 
 ------
@@ -326,13 +317,13 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p>We can also plot these distributions to do a visual inspection, for example using histograms:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fail_model_weakinf, <span class="st">"hist"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fail_model_weakinf, <span class="st">"hist"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-weak-coef" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-prior-distr" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-weak-coef-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/fig-prior-distr-1.png" class="img-fluid figure-img" width="672"></p>
 <figcaption class="figure-caption">Figure&nbsp;1: Distribution of the two simulated parameters for our weakly-informative priors</figcaption>
 </figure>
 </div>
@@ -344,23 +335,23 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p>Let us make a histogram and see if the simulated data reflects this prior understanding:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(fail_model_weakinf, <span class="at">ndraws =</span> <span class="dv">1000</span>) <span class="sc">|&gt;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">|&gt;</span> </span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">proportion_fail =</span> <span class="fu">mean</span>(.prediction <span class="sc">==</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> proportion_fail)) <span class="sc">+</span> </span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span> </span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> .<span class="dv">5</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>, <span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Count"</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Proportion of failed test"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(fail_model_weakinf, <span class="at">ndraws =</span> <span class="dv">1000</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">|&gt;</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">proportion_fail =</span> <span class="fu">mean</span>(.prediction <span class="sc">==</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> proportion_fail)) <span class="sc">+</span> </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>, <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span> </span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> .<span class="dv">5</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>, <span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Count"</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Proportion of failed test"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-weak-prior-hist" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-prior-weak" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-weak-prior-hist-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/fig-prior-weak-1.png" class="img-fluid figure-img" width="672"></p>
 <figcaption class="figure-caption">Figure&nbsp;2: Checking the intercept. Simulated proportion of failed reading tests, given a weakly informative prior. The distribution is roughly uniform; reflecting that we have little idea about how many students in the control group would fail the reading test.</figcaption>
 </figure>
 </div>
@@ -370,21 +361,21 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p>Second, we can simulate 100 treatment effects and see if these match our prior understanding. Recall, that we believed the treatment effect would center around 0 but that it could have <em>a lot</em> of variation to it (sd = 5).</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_epred_draws</span>(fail_model_weakinf, <span class="at">ndraws =</span> <span class="dv">100</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> .epred, <span class="at">group =</span> .draw )) <span class="sc">+</span> </span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> .<span class="dv">3</span>, <span class="at">color =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span> </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()) <span class="sc">+</span> </span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Proportion of failed tests"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_epred_draws</span>(fail_model_weakinf, <span class="at">ndraws =</span> <span class="dv">100</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> .epred, <span class="at">group =</span> .draw )) <span class="sc">+</span> </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> .<span class="dv">3</span>, <span class="at">color =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span> </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()) <span class="sc">+</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Proportion of failed tests"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-weak-prior-lines" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-prior-weak-coef" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-weak-prior-lines-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/fig-prior-weak-coef-1.png" class="img-fluid figure-img" width="672"></p>
 <figcaption class="figure-caption">Figure&nbsp;3: Checking the treatment effect. Simulated treatment effects from 100 simulated datasets, given a weakly-informative prior. Lines go in all directions; reflecting our weak prior beliefs about what the treatment effect could be. The proportion of failed students could be higher or lower in the treatment group. We don’t really know.</figcaption>
 </figure>
 </div>
@@ -400,70 +391,55 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p><span class="math display">\[ log(odds) = log(\frac{\pi}{1-\pi}) \]</span></p>
 <p>Let us apply the formula to our 40 and 60 percent range:</p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the range</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>lower_prob <span class="ot">&lt;-</span> <span class="fl">0.4</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>upper_prob <span class="ot">&lt;-</span> <span class="fl">0.6</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the log-odds</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>lower_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(lower_prob <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> lower_prob))</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>upper_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(upper_prob <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> upper_prob))</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the prior - location will be in the middle of lower and upper logodds</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>prior_intercept <span class="ot">&lt;-</span> </span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">normal</span>(<span class="at">location =</span> (lower_logodds <span class="sc">+</span> upper_logodds) <span class="sc">/</span> <span class="dv">2</span>, </span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">scale =</span> <span class="fu">abs</span>((upper_logodds <span class="sc">-</span> lower_logodds) <span class="sc">/</span> <span class="dv">4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the range</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>lower_prob <span class="ot">&lt;-</span> <span class="fl">0.4</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>upper_prob <span class="ot">&lt;-</span> <span class="fl">0.6</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the log-odds</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>lower_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(lower_prob <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> lower_prob))</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>upper_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(upper_prob <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> upper_prob))</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the prior - location will be in the middle of lower and upper logodds</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>prior_intercept <span class="ot">&lt;-</span> </span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">normal</span>(<span class="at">location =</span> (lower_logodds <span class="sc">+</span> upper_logodds) <span class="sc">/</span> <span class="dv">2</span>, </span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">scale =</span> <span class="fu">abs</span>((upper_logodds <span class="sc">-</span> lower_logodds) <span class="sc">/</span> <span class="dv">4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Then our location for the intercept will be:</p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_intercept<span class="sc">$</span>location, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_intercept<span class="sc">$</span>location, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0</code></pre>
 </div>
 </div>
 <p>And the scale will be:</p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_intercept<span class="sc">$</span>scale, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_intercept<span class="sc">$</span>scale, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.2</code></pre>
 </div>
 </div>
 <p>Second, we need to consider the treatment effect. Say we think that the chance of failing the reading test could be anywhere from 15 percent lower for the treatment group to no difference at all. Expressed in odds, these differences are .85 and 1 respectively. Let’s use that range to specify a prior for the treatment effect:</p>
 <div class="cell">
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the range</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>lower_effect_odds <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>upper_effect_odds <span class="ot">&lt;-</span> .<span class="dv">85</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to log-odds</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>lower_effect_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(lower_effect_odds)</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>upper_effect_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(upper_effect_odds)</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the prior for the treatment effect coefficient</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>prior_treat <span class="ot">&lt;-</span> </span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">normal</span>(<span class="at">location =</span> (lower_effect_logodds <span class="sc">+</span> upper_effect_logodds) <span class="sc">/</span> <span class="dv">2</span>, </span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">scale =</span> <span class="fu">abs</span>((upper_effect_logodds <span class="sc">-</span> lower_effect_logodds) <span class="sc">/</span> <span class="dv">4</span>)</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>         )</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Print location and scale for the treatment effect</span></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_treat<span class="sc">$</span>location, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the range</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>lower_effect_odds <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>upper_effect_odds <span class="ot">&lt;-</span> .<span class="dv">85</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to log-odds</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>lower_effect_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(lower_effect_odds)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>upper_effect_logodds <span class="ot">&lt;-</span> <span class="fu">log</span>(upper_effect_odds)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify the prior for the treatment effect coefficient</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>prior_treat <span class="ot">&lt;-</span> </span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">normal</span>(<span class="at">location =</span> (lower_effect_logodds <span class="sc">+</span> upper_effect_logodds) <span class="sc">/</span> <span class="dv">2</span>, </span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">scale =</span> <span class="fu">abs</span>((upper_effect_logodds <span class="sc">-</span> lower_effect_logodds) <span class="sc">/</span> <span class="dv">4</span>)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>         )</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Print location and scale for the treatment effect</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_treat<span class="sc">$</span>location, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] -0.08</code></pre>
 </div>
-<details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_treat<span class="sc">$</span>scale, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(prior_treat<span class="sc">$</span>scale, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.04</code></pre>
 </div>
@@ -471,22 +447,22 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p>Again, we should simulate data using our priors to make sure that the data reflects our prior understanding.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fail_model_evidence <span class="ot">&lt;-</span> </span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(fail_test <span class="sc">~</span> condition,</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> fake, <span class="at">family =</span> binomial,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_intercept =</span> prior_intercept,</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior =</span> prior_treat,</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">5000</span><span class="sc">*</span><span class="dv">2</span>, <span class="at">seed =</span> <span class="dv">1407</span>,</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_PD =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">refresh =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>fail_model_evidence <span class="ot">&lt;-</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(fail_test <span class="sc">~</span> condition,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> fake, <span class="at">family =</span> binomial,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_intercept =</span> prior_intercept,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior =</span> prior_treat,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">5000</span><span class="sc">*</span><span class="dv">2</span>, <span class="at">seed =</span> <span class="dv">1407</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_PD =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">refresh =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>First we check that we specified the priors correctly:</p>
+<p>First we check that we specified the priors correctly. See <a href="#fig-prior-evidence-coef">Figure&nbsp;4</a>.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prior_summary</span>(fail_model_evidence) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">prior_summary</span>(fail_model_evidence) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Priors for model 'fail_model_evidence' 
@@ -502,14 +478,14 @@ See help('prior_summary.stanreg') for more details</code></pre>
 </div>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fail_model_evidence, <span class="st">"hist"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fail_model_evidence, <span class="st">"hist"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-evidence-coef" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-prior-evidence-coef" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-evidence-coef-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;4: Distribution of the two simulated parameters for our evidence-based priors</figcaption>
+<p><img src="index_files/figure-html/fig-prior-evidence-coef-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;4: Distribution of the two simulated parameters for our evidence-based priors.</figcaption>
 </figure>
 </div>
 </div>
@@ -517,24 +493,24 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p>And then we can simulate 1,000 data sets using our prior distribution. For each draw, we calculate the share of students who failed the reading test (<code>.prediction == 1</code>) and plot those in a histogram:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(fail_model_evidence, <span class="at">ndraws =</span> <span class="dv">1000</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">|&gt;</span> </span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">proportion_fail =</span> <span class="fu">mean</span>(.prediction <span class="sc">==</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> proportion_fail)) <span class="sc">+</span> </span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>, </span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span> </span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> .<span class="dv">5</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>, <span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Count"</span>,</span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Proportion of failed students"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(fail_model_evidence, <span class="at">ndraws =</span> <span class="dv">1000</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.draw) <span class="sc">|&gt;</span> </span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">proportion_fail =</span> <span class="fu">mean</span>(.prediction <span class="sc">==</span> <span class="dv">1</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> proportion_fail)) <span class="sc">+</span> </span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>, </span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> <span class="st">"white"</span>) <span class="sc">+</span> </span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> .<span class="dv">5</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>, <span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Count"</span>,</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Proportion of failed students"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-prior-evidence" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-prior-evidence-intercept" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-prior-evidence-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/fig-prior-evidence-intercept-1.png" class="img-fluid figure-img" width="672"></p>
 <figcaption class="figure-caption">Figure&nbsp;5: Checking the intercept. Simulated proportion of failed reading tests for the full sample, given an evidence-based prior. The proportion centers more narrowly around .5; reflecting that we have stronger beliefs.</figcaption>
 </figure>
 </div>
@@ -544,22 +520,22 @@ See help('prior_summary.stanreg') for more details</code></pre>
 <p>Second, for checking the prior treatment effect, we can make the same plot as before:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_epred_draws</span>(fail_model_evidence, <span class="at">ndraws =</span> <span class="dv">100</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> fail_test, <span class="at">group =</span> .draw )) <span class="sc">+</span> </span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .epred), </span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">linewidth =</span> .<span class="dv">3</span>, <span class="at">color =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span> </span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()) <span class="sc">+</span> </span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>,</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Probability of failing the reading test"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1407</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>fake <span class="sc">|&gt;</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_epred_draws</span>(fail_model_evidence, <span class="at">ndraws =</span> <span class="dv">100</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> condition, <span class="at">y =</span> fail_test, <span class="at">group =</span> .draw )) <span class="sc">+</span> </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .epred), </span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">linewidth =</span> .<span class="dv">3</span>, <span class="at">color =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span> </span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>()) <span class="sc">+</span> </span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>,</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Probability of failing the reading test"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-prior-treat" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-prior-evidence-treat" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/fig-prior-treat-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/fig-prior-evidence-treat-1.png" class="img-fluid figure-img" width="672"></p>
 <figcaption class="figure-caption">Figure&nbsp;6: Checking the treatment effect. Simulated treatment effects from 100 simulated datasets, given an evidence-based prior. Most lines slope downward; reflecting our belief that fewer students in the treatment group will fail the test.</figcaption>
 </figure>
 </div>
