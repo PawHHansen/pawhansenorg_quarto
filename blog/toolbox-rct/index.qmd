@@ -2,7 +2,7 @@
 title: "The policy evaluator’s toolbox: Presenting results from randomized experiments"
 author: "Paw Hansen"
 date: '2023-05-24'
-categories: [statistical analysis]
+categories: [statistical analysis, policy evaluation]
 image: featured.jpg
 description: 'Sensible out-of-the-box tables and plots for your next randomized controlled trial'
 editor_options: 

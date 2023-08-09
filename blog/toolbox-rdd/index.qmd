@@ -3,7 +3,7 @@ title: "The policy evaluator's toolbox: Plotting your next regression discontinu
   analysis"
 author: "Paw Hansen"
 date: '2023-06-01'
-categories: [statistical analysis]
+categories: [statistical analysis, policy evaluation]
 image: featured.jpg
 description: 'When evaluating public policies, regression discontinuity designs are impossible to live without. Here is how to do one.'
 
