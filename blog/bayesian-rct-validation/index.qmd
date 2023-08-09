@@ -15,7 +15,9 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 ```
 
-The aim of this post is to _validate_ our models. Basically, we'll be asking two questions:
+Welcome to the second post in my brief series on getting started with Bayesian modeling in R. In [my last post](https://www.pawhansen.org/blog/bayesian-rct-spec-priors/), we covered specifying the priors to take into account any prior knowledge. 
+
+Today, we'll try to _validate_ the models we built. Basically, we'll be asking two questions:
 
 1. How well does the model fit the data?
 2. How well does the model fit _new_ data?

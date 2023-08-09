@@ -328,9 +328,12 @@ One of the incredibly powerful aspects of Bayesian analysis is the ability to in
 
 -   Johnson, A. A., Ott, M. Q., & Dogucu, M. (2022). *Bayes rules!: An introduction to applied Bayesian modeling*. CRC Press.
 
--   Gelman, A., Hill, J., & Vehtari, A. (2020). *Regression and other stories*. Cambridge University Press.
+-   Gelman, A., Hill, J., & Vehtari, A. (2020). *Regression and other stories*. Cambridge University Press.  
 
 -   Ryan, E. G., Harrison, E. M., Pearse, R. M., & Gates, S. (2019). Perioperative haemodynamic therapy for major gastrointestinal surgery: the effect of a Bayesian approach to interpreting the findings of a randomised controlled trial. *BMJ open, 9(3)*.
 
 -   Goodrich, B., Gabry, J., Ali, I., & Brilleman, S. (2020). *rstanarm: Bayesian applied regression modeling via Stan*. Find many of their useful vignettes [here](https://mc-stan.org/rstanarm/).
+
+- Lüdeck, Daniel (December 7, 2017). _Bayesian regression models in R: choosing informative priors in rstanarm_. 11th Meeting of the Hamburg R-User Group. Slides retrieved [here](https://strengejacke.files.wordpress.com/2017/12/bayesian-regression-models.pdf#page246)
+
 

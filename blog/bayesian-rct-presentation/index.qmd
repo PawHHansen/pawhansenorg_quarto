@@ -13,7 +13,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 ```
 
-Welcome to the last part of my three-part series on Bayesian analysis of randomized controlled trial. So far, we have specified priors to take previous knowledge into account and we have fit and validated two different models.
+Welcome to the last part of my three-part series on Bayesian analysis of randomized controlled trial. So far, we have [specified priors to take previous knowledge into account](https://www.pawhansen.org/blog/bayesian-rct-spec-priors/) and we have [fit and validated two different models](https://www.pawhansen.org/blog/bayesian-rct-validation/).
 
 In this final post, we'll look at how we could go about presenting and interpreting our results. In a report or scientific article, this is the part that should go into the Results section.
 
@@ -67,9 +67,7 @@ abs_risk <-
   summarize(abs_risk = mean(fail_test, na.rm = T), 
             .by = condition)
 
-abs_risk |> 
-  mutate(across(where(is.numeric), ~round(., 2))) |> 
-  kbl()
+abs_risk 
 ```
 
 At first sight, it seems the treatment worked! The absolute risk of failing the reading test was `r round(abs_risk$abs_risk[abs_risk$condition == "Control"], 2)` in the control group but only `r round(abs_risk$abs_risk[abs_risk$condition == "Treatment"], 2)` in the treatment group.
@@ -94,9 +92,7 @@ round(abs_risk$abs_risk[abs_risk$condition == "Treatment"]
 
 Thus, the **relative risk** of failing the reading test for students in the treatment group was only `r round(abs_risk$abs_risk[abs_risk$condition == "Treatment"] / abs_risk$abs_risk[abs_risk$condition == "Control"], 2)` as compared to students in the control group.
 
-Notice that the relative risk is _not_ the same as the odds, since the odds are the risk of an event occurring in any group divided by the risk of the event not occuring. 
-
-Finally, the **number needed to treat** is the number of individuals you need to treat to prevent one additional bad outcome:
+Finally, the **number needed to treat** is the number of individuals you need to treat to prevent one additional bad outcome. For calculating the number needed to treat, we simply take 1 and divide it by the absolute risk reduction:  
 
 ```{r}
 #| code-fold: false
@@ -104,7 +100,7 @@ round(1/ (abs_risk$abs_risk[abs_risk$condition == "Control"]
           - abs_risk$abs_risk[abs_risk$condition == "Treatment"]), 0)
 ```
 
-Finally, for calculating the **number needed to treat**, we simply take 1 and divide it by the absolute risk reduction. Our results suggests that for every `r round(1/ (abs_risk$abs_risk[abs_risk$condition == "Control"] - abs_risk$abs_risk[abs_risk$condition == "Treatment"]), 0)` students placed in the program, we could prevent 1 student from failing the reading test.
+Our results suggests that for every `r round(1/ (abs_risk$abs_risk[abs_risk$condition == "Control"] - abs_risk$abs_risk[abs_risk$condition == "Treatment"]), 0)` students placed in the program, we could prevent 1 student from failing the reading test.
 
 Hopefully, calculating each of these quantities "by hand", has given us some intuition about what each number conveys. In practice, though, we will never want to do it this way ever again. For one thing, the above approach did not give us any uncertainty estimates, which we should always include as part of any interpretation. Moreover, recalling formulas can be tedious and for more complicated models, many of these will break down anyway. Instead, we will use our posterior simulations.
 
@@ -121,7 +117,7 @@ mod_rstan <-
            refresh = 0)
 ```
 
-The core principle for presenting results is that we don't want to just show a list of model parameters. These have little interest in and off themselves. Instead, we'll use the model to make predictions, i.e. show the [*implications* of the model.](https://www.pawhansen.org/blog/2023-05-17-the-human-scale-principle-for-presenting-statistical-results/).
+The core principle for presenting results is that we don't want to just show a list of model parameters. These have little interest in and off themselves. Instead, we'll use the model to make predictions, i.e. show the [*implications* of the model](https://www.pawhansen.org/blog/human-scale-principle/).
 
 To this end, we set up a data frame containing the values of the predictors we intend to predict from (aka a "predictor matrix"). In our context of a controlled trial, these are simply the treatment and the control group:
 
@@ -221,10 +217,11 @@ nntt |>
 When writing up our analysis, we could include one or more of these plots and then use the predictions to make meaningful statements about the model implications and uncertainties. Taking the number needed to treat as an example, we might want to calculate the 80 percent prediction interval:
 
 ```{r}
+#| code-fold: false 
 round(quantile(nntt$nn_treat, c(.1, .5, .9)))
 ```
 
-From that, we could write something like: "Using our Bayesian model, we estimated the number needed to treat. We found that the intervention should be applied to 9 students to prevent one case of dyslexia, plus or minus about 4 students."
+From that, we could write something like: "Using our Bayesian model, we estimated the number needed to treat. We found that the intervention should be applied to 9 students to prevent one additional case of dyslexia, plus or minus about 4 students."
 
 ### Taking the posterior out for a spin: probability of a practically significant effect
 
@@ -263,15 +260,15 @@ abs_rr_density_tibble <-
 
 ```
 
-@fig-post-sim-1 shows a distribution of plausible risk reductions given the data and model. The shaded region starting at 15 percent is what we care about. This region is an incredibly powerful concept because it allows us to think about effect sizes in terms of what _matters rather than what is "statistically significant".  
+@fig-post-sim-1 shows a distribution of plausible risk reductions given the data and model. The shaded region starting at 15 percent is what we care about. This region is an incredibly powerful concept because it allows us to think about effect sizes in terms of what is _practically_, as opposed to _statistically_, significant. 
 
-What is the probability that our risk reduction lies within the ROPE? Figure @fig-post-sim-2, shows a so-called quantile function, plotting the potential risk reductions on the x-axis and the inverse cumulative probability on the y-axis. Substantially, the inverse cumulative probability describes the probability of the risk reduction being greater than the number on the x-axis. 
+What is the probability that our risk reduction lies within this region? Figure @fig-post-sim-2, shows a so-called quantile function, plotting the potential risk reductions on the x-axis and the inverse cumulative probability on the y-axis. Substantially, the inverse cumulative probability describes the probability of the risk reduction being greater than the number on the x-axis. 
 
-Looking at the figure, we see that the probability is about `r secret_prob`. Is this a lot or a little? Well, that depends... 
+Looking at the figure, we see that the probability is about `r secret_prob` percent. Is this a lot or a little? Well, that depends... 
 
 Of course `r secret_prob` percent, or about 1-in-8, does not sound like a lot. But suppose that running the intervention is really cheap. Then, policy makers may want to "roll the dice" and see what happens. After all, the probability that the effect size is greater than 15 percent is small, but the probability that the effect size is at least 5 percent is `r round(mean(abs_rr$abs_rr > .05) * 100, 0)` percent!
 
-The point is that when doing Bayesian analysis, we do not bake decision-making into the analysis, such as saying that the treatment "worked" because _p_ happened to be <0.05. Instead, we live with the uncertainty; estimating the effect size and uncertainties the best we can, and then leave the rest up to stakeholders.  
+The point is that when doing Bayesian analysis, we do not bake decision-making into the analysis, such as saying that the treatment "worked" because the _p_-value happened to be <0.05. Instead, we live with the uncertainty; estimating the effect size and uncertainties the best we can, and then leave the rest up to stakeholders.  
 
 ```{r}
 #| label: fig-post-sim
