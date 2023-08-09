@@ -150,6 +150,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       </div>
                           <div class="quarto-categories">
                 <div class="quarto-category">statistical analysis</div>
+                <div class="quarto-category">policy evaluation</div>
               </div>
                   </div>
   </div>
@@ -185,7 +186,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<p>In the previous post of my “policy evaluator’s toolbox” series, I showed you two basic ways of plotting results from randomized experiments. A randomized experiment should be the design you are going for whenever possible since it allows for easy estimation and clean causal inference.</p>
+<p>In the previous post of my <a href="https://www.pawhansen.org/blog#category=policy%20evaluation">“policy evaluator’s toolbox” series</a>, I showed you two basic ways of plotting results from randomized experiments. A randomized experiment should be the design you are going for whenever possible since it allows for easy estimation and clean causal inference.</p>
 <p>In practice, though, randomized experiments may not be feasible. Often policymakers are unwilling to assign policies at random, so the question becomes what we can do in those cases if we still want to evaluate if a policy had an effect.</p>
 <p>Today, we’ll have a look at one widely-used approach: the <strong>regression discontinuity design</strong>. Here is the definition I got when asking ChatGPT:</p>
 <blockquote class="blockquote">
@@ -201,24 +202,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Finally, a popular threshold is <em>test scores</em>, which we will work with today. Specifically, we’ll use the <code>Chile Schools</code> data taken from (the highly recommendable) <em>Regression and Other Stories</em>. Let’s get our packages and load up the data:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Packages used in this post</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggsci)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>chile <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"chile.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>The <code>Chile Schools</code> data is a good example of something you will often encounter when doing policy evaluations. In 1992, the Chilean government wanted to improve poor-performing schools. To do so, the government assigned extra resources (teacher training and after-school tutoring) to all schools scoring lower than a predefined cutoff on the average fourth-grade test score. This assignment is clearly not random. In fact, we can be quite certain that the schools that received the extra resources are different from those that did not (that is why those schools received extra help!).</p>
 <p>However, as we move closer to the cutoff, it seems more and more likely that the schools falling on either side are not <em>that</em> different. For example, say the cutoff was 60 points on a 100-point scale. Two schools with an average score of 30 and 70 are clearly different, and it makes no sense to compare those. But what about two schools scoring 58 and 62? Do we really believe that those schools differ fundamentally from each other? The key assumption we make in a regression discontinuity design is that the units we look at on either side of the cutoff are as-if random.</p>
 <section id="plot-1-showing-the-raw-data" class="level3">
 <h3 class="anchored" data-anchor-id="plot-1-showing-the-raw-data">Plot 1: Showing the raw data</h3>
-<p>A good place to start is to show the raw data on either side of the cutoff. In the plot below, all units above the threshold (here scaled to zero) received extra help, while those below did not.</p>
+<p>A good place to start is to show the raw data on either side of the cutoff. In the <a href="#fig-peak">Figure&nbsp;1</a>, all units above the threshold (scaled to zero) received extra help, while those below did not.</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make a variable saying if schools received the treatment or not</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>chile <span class="ot">&lt;-</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  chile <span class="sc">%&gt;%</span> </span>
@@ -235,18 +238,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
+<div id="fig-peak" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Reading test scores in 1992 by assignment variable. The assignment variable is centered reading test scores in 1988. Having a score less than 0 meant that schools would be included in the program.</figcaption>
+<p><img src="index_files/figure-html/fig-peak-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;1: Reading test scores in 1992 by assignment variable. The assignment variable is centered reading test scores in 1988. Having a score less than 0 meant that schools would be included in the program.</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>However, since we wanted schools to be “alike” (in terms of potential outcomes), we should probably focus the graph on those units that are close to the threshold. Let’s define a cutoff range from -5 through 5 and make a new plot:</p>
+<p>However, since we wanted schools to be “alike” (in terms of potential outcomes), we should probably focus the graph on those units that are close to the threshold. Let’s define a cutoff range from -5 through 5 and make a new plot (<a href="#fig-cutoff">Figure&nbsp;2</a>):</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>chile_sub <span class="ot">&lt;-</span> </span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  chile <span class="sc">%&gt;%</span> </span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(rule2 <span class="sc">&lt;</span> <span class="dv">5</span>, rule2 <span class="sc">&gt;</span> <span class="sc">-</span><span class="dv">5</span>) </span>
@@ -264,10 +267,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
+<div id="fig-cutoff" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Reading test scores in 1992 by assignment variable. In this version of the graph, only schools close to the cutoff (-5 through 5) are plotted.</figcaption>
+<p><img src="index_files/figure-html/fig-cutoff-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;2: Reading test scores in 1992 by assignment variable. In this version of the graph, only schools close to the cutoff (-5 through 5) are plotted.</figcaption>
 </figure>
 </div>
 </div>
@@ -275,7 +278,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>And we can even make this plot a bit clearer if we use binned averages instead of showing all data points:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>chile_sub <span class="sc">%&gt;%</span> </span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(rule2, read92)) <span class="sc">+</span> </span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, </span>
@@ -292,10 +295,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
+<div id="fig-better" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Reading test scores in 1992 by assignment variable. In this version of the graph, schools are plotted using binned averages on the assignment variable.</figcaption>
+<p><img src="index_files/figure-html/fig-better-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;3: Reading test scores in 1992 by assignment variable. In this version of the graph, schools are plotted using binned averages on the assignment variable.</figcaption>
 </figure>
 </div>
 </div>
@@ -307,7 +310,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Luckily, the modeling part of a regression discontinuity analysis is straightforward: We simply include the condition and the assignment variable as predictors in our regression model:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>chile_rs <span class="ot">&lt;-</span> </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(read92 <span class="sc">~</span> condition <span class="sc">+</span> rule2, <span class="at">data =</span> chile_sub) </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -316,14 +319,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">c</span>(<span class="st">"statistic"</span>, <span class="st">"std.error"</span>, <span class="st">"p.value"</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">term =</span> <span class="fu">c</span>(<span class="st">"Intercept"</span>, <span class="st">"In program"</span>, <span class="st">"Assignment variable"</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>(<span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Term"</span>, <span class="st">"Estimate"</span>, <span class="st">"Lower bound"</span>, <span class="st">"Upper bound"</span>),</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">caption =</span> <span class="st">"Effect of being in policy program"</span>,</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">booktabs =</span> T,</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">digits =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table class="table table-sm table-striped small" data-quarto-postprocess="true">
-<caption>Effect of being in policy program</caption>
+<div id="tbl-effect" class="anchored">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Table&nbsp;1: Effect of being in policy program</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;" data-quarto-table-cell-role="th">Term</th>
@@ -353,6 +354,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
+</div>
 
 
 </div>
@@ -361,7 +363,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>To understand this result better, and to present it in an intuitive way to stakeholders, we can plot the model on either side of the cutoff (i.e.&nbsp;the regression line):</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>chile_sub <span class="sc">%&gt;%</span> </span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(rule2, read92)) <span class="sc">+</span> </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"grey50"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span> </span>
@@ -392,10 +394,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
+<div id="fig-final" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Reading test scores in 1992 by assignment variable. In this version of the graph, the fitted model on either side of the threshold is overlaid on the raw data.</figcaption>
+<p><img src="index_files/figure-html/fig-final-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;4: Reading test scores in 1992 by assignment variable. In this version of the graph, the fitted model on either side of the threshold is overlaid on the raw data.</figcaption>
 </figure>
 </div>
 </div>
@@ -407,7 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Finally, in most real-world applications, it makes sense to include pre-treatment variables that strongly predict the outcome since this can make our model estimates more precise. In our example, we have schoolchildren’s math and reading scores in 1988, which is probably useful when trying to predict reading scores in 1992. Let’s include those:</p>
 <div class="cell">
 <details>
-<summary>Show the code</summary>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>chile_rs_final <span class="ot">&lt;-</span> </span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(read92 <span class="sc">~</span> condition <span class="sc">+</span> rule2 <span class="sc">+</span> read88 <span class="sc">+</span> math88, <span class="at">data =</span> chile_sub) </span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -420,14 +422,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"Reading score in 1988"</span>,</span>
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"Math score in 1988"</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>(<span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Term"</span>, <span class="st">"Estimate"</span>, <span class="st">"Lower bound"</span>, <span class="st">"Upper bound"</span>),</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">caption =</span> <span class="st">"Effect of being in policy program, covariate adjusted"</span>,</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">booktabs =</span> T,</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">digits =</span> <span class="dv">2</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table class="table table-sm table-striped small" data-quarto-postprocess="true">
-<caption>Effect of being in policy program, covariate adjusted</caption>
+<div id="tbl-final-model" class="anchored">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Table&nbsp;2: Effect of being in policy program, covariate adjusted</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;" data-quarto-table-cell-role="th">Term</th>
@@ -469,6 +469,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
+</div>
 
 
 </div>

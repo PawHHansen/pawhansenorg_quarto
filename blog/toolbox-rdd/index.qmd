@@ -6,14 +6,15 @@ date: '2023-06-01'
 categories: [statistical analysis, policy evaluation]
 image: featured.jpg
 description: 'When evaluating public policies, regression discontinuity designs are impossible to live without. Here is how to do one.'
-
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 ```
 
-In the previous post of my “policy evaluator’s toolbox” series, I showed you two basic ways of plotting results from randomized experiments. A randomized experiment should be the design you are going for whenever possible since it allows for easy estimation and clean causal inference.
+In the previous post of my [“policy evaluator’s toolbox” series](https://www.pawhansen.org/blog#category=policy%20evaluation), I showed you two basic ways of plotting results from randomized experiments. A randomized experiment should be the design you are going for whenever possible since it allows for easy estimation and clean causal inference.
 
 In practice, though, randomized experiments may not be feasible. Often policymakers are unwilling to assign policies at random, so the question becomes what we can do in those cases if we still want to evaluate if a policy had an effect.
 
@@ -32,6 +33,10 @@ In my field of public welfare, many such cutoff variables exist:
 Finally, a popular threshold is *test scores*, which we will work with today. Specifically, we’ll use the `Chile Schools` data taken from (the highly recommendable) _Regression and Other Stories_. Let’s get our packages and load up the data:
 
 ```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
 
 library(tidyverse)
 library(broom)
@@ -41,12 +46,8 @@ library(kableExtra)
 
 theme_set(theme_minimal(base_size = 12))
 
-```
-
-```{r echo=F}
-library(readr)
-
 chile <- read_csv("chile.csv")
+
 ```
 
 The `Chile Schools` data is a good example of something you will often encounter when doing policy evaluations. In 1992, the Chilean government wanted to improve poor-performing schools. To do so, the government assigned extra resources (teacher training and after-school tutoring) to all schools scoring lower than a predefined cutoff on the average fourth-grade test score. This assignment is clearly not random. In fact, we can be quite certain that the schools that received the extra resources are different from those that did not (that is why those schools received extra help!). 
@@ -55,9 +56,11 @@ However, as we move closer to the cutoff, it seems more and more likely that the
 
 ### Plot 1: Showing the raw data
 
-A good place to start is to show the raw data on either side of the cutoff. In the plot below, all units above the threshold (here scaled to zero) received extra help, while those below did not.
+A good place to start is to show the raw data on either side of the cutoff. In the @fig-peak, all units above the threshold (scaled to zero) received extra help, while those below did not.
 
-```{r fig.cap="Reading test scores in 1992 by assignment variable. The assignment variable is centered reading test scores in 1988. Having a score less than 0 meant that schools would be included in the program."}
+```{r}
+#| label: fig-peak
+#| fig-cap: "Reading test scores in 1992 by assignment variable. The assignment variable is centered reading test scores in 1988. Having a score less than 0 meant that schools would be included in the program."
 
 # Make a variable saying if schools received the treatment or not
 chile <-
@@ -76,9 +79,11 @@ chile %>%
 
 ```
 
-However, since we wanted schools to be "alike" (in terms of potential outcomes), we should probably focus the graph on those units that are close to the threshold. Let's define a cutoff range from -5 through 5 and make a new plot:
+However, since we wanted schools to be "alike" (in terms of potential outcomes), we should probably focus the graph on those units that are close to the threshold. Let's define a cutoff range from -5 through 5 and make a new plot (@fig-cutoff):
 
-```{r fig.cap="Reading test scores in 1992 by assignment variable. In this version of the graph, only schools close to the cutoff (-5 through 5) are plotted."}
+```{r}
+#| label: fig-cutoff
+#| fig-cap: "Reading test scores in 1992 by assignment variable. In this version of the graph, only schools close to the cutoff (-5 through 5) are plotted."
 
 chile_sub <- 
   chile %>% 
@@ -99,7 +104,10 @@ chile_sub %>%
 
 And we can even make this plot a bit clearer if we use binned averages instead of showing all data points:
 
-```{r fig.cap="Reading test scores in 1992 by assignment variable. In this version of the graph, schools are plotted using binned averages on the assignment variable."}
+```{r}
+#| label: fig-better
+#| fig-cap: "Reading test scores in 1992 by assignment variable. In this version of the graph, schools are plotted using binned averages on the assignment variable."
+
 chile_sub %>% 
   ggplot(aes(rule2, read92)) + 
   geom_vline(xintercept = 0, 
@@ -123,6 +131,8 @@ Showing the data (to others but also yourself) is always a good place to start a
 Luckily, the modeling part of a regression discontinuity analysis is straightforward: We simply include the condition and the assignment variable as predictors in our regression model: 
 
 ```{r}
+#| label: tbl-effect
+#| tbl-cap: "Effect of being in policy program"
 
 chile_rs <- 
   lm(read92 ~ condition + rule2, data = chile_sub) 
@@ -132,19 +142,17 @@ chile_rs %>%
   select(-c("statistic", "std.error", "p.value")) %>% 
   mutate(term = c("Intercept", "In program", "Assignment variable")) %>% 
   kbl(col.names = c("Term", "Estimate", "Lower bound", "Upper bound"),
-      caption = "Effect of being in policy program",
-      booktabs = T,
-      digits = 2) %>% 
-  kable_styling(full_width = F)
+      digits = 2)
 
 ```
-
 
 Thus, the estimated effect of being in the program is about `r round(coef(chile_rs)[2], 2)` points. 
 
 To understand this result better, and to present it in an intuitive way to stakeholders, we can plot the model on either side of the cutoff (i.e. the regression line):
 
-```{r fig.cap="Reading test scores in 1992 by assignment variable. In this version of the graph, the fitted model on either side of the threshold is overlaid on the raw data."}
+```{r}
+#| label: fig-final
+#| fig-cap: "Reading test scores in 1992 by assignment variable. In this version of the graph, the fitted model on either side of the threshold is overlaid on the raw data."
 
 chile_sub %>% 
   ggplot(aes(rule2, read92)) + 
@@ -185,7 +193,9 @@ The estimated effect of `r round(coef(chile_rs)[2], 2)` points corresponds to th
 Finally, in most real-world applications, it makes sense to include pre-treatment variables that strongly predict the outcome since this can make our model estimates more precise. In our example, we have schoolchildren’s math and reading scores in 1988, which is probably useful when trying to predict reading scores in 1992. Let’s include those:
 
 ```{r}
-
+#| label: tbl-final-model
+#| tbl-cap: "Effect of being in policy program, covariate adjusted"
+#| 
 chile_rs_final <- 
   lm(read92 ~ condition + rule2 + read88 + math88, data = chile_sub) 
 
@@ -198,10 +208,7 @@ chile_rs_final %>%
                   "Reading score in 1988",
                   "Math score in 1988")) %>% 
   kbl(col.names = c("Term", "Estimate", "Lower bound", "Upper bound"),
-      caption = "Effect of being in policy program, covariate adjusted",
-      booktabs = T,
-      digits = 2) %>% 
-  kable_styling(full_width = F)
+      digits = 2) 
 
 ```
 
