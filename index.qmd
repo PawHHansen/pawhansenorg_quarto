@@ -7,9 +7,6 @@ about:
   image-width: 15em
   image-shape: round
   links:
-    - icon: envelope
-      text: "Email"
-      href: "mailto:paw.hansen@ku.dk"
     - icon: github
       text: "GitHub"
       href: https://github.com/PawHHansen 
@@ -20,10 +17,10 @@ about:
       href: https://scholar.google.dk/citations?user=EWSaCHoAAAAJ&hl=da&oi=ao 
 ---
 
-Hi, I'm Paw! Good to see you.
-
-I'm a researcher at the [The Danish Center for Social Science Research](https://www.vive.dk/EN/) where I work on I do experimental behavioral science research related to the public sector. Currently, I study how frontline workers make professional judgements, and how these affect clients. You can find examples of my research [here](link). 
-
-My research interests also include data visualization, Bayesian modeling, and how to communicate statistics and evidence to practitioners in compelling and intuitive ways. I occasionally [blog](link) about these topics.  
-
-When I'm out of office, I enjoy sourdough baking, having coffee with friends, and reading gloomy novels in the evenings. I live in Copenhagen with my wife and our  boy, Jakob.
+# Hi, I'm Paw! It's great to have you here.
+ 
+I'm a researcher at the [Danish Center for Social Science Research](https://www.vive.dk/EN/), where I focus on experimental behavioral science research related to the public sector. Currently, I’m studying how frontline workers make professional judgments and what impacts these might have on clients. You can explore some examples of my research right [here](https://www.pawhansen.org/research).
+ 
+My research interests also include data visualization, Bayesian modeling, and finding effective ways to communicate statistics and evidence to practitioners in a compelling and intuitive manner. I occasionally write [blog posts](https://www.pawhansen.org/blog) on these subjects.
+ 
+When I'm not in the office, I find joy in sourdough baking, sharing coffee moments with friends, and immersing myself in somber novels during the evenings. I reside in Copenhagen along with my wife and our son, Jakob.

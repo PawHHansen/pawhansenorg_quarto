@@ -8,19 +8,17 @@ categories: [frontline work]
 
 ---
 
-I have a new article out in *Public Administration*.  
+I have a new article out in [Public Administration](https://onlinelibrary.wiley.com/doi/full/10.1111/padm.12913).  
 
 Studies show that asking frontline workers (teachers, nurses, police officers) to reflect on the positive difference they make in citizens' lives will enhance their motivation. This idea makes sense: People like to help each other out, and when making one's positive impact more obvious, we should expect public servants to be happier about their jobs.   
 
-However, previous studies have often relied on _paid_ survey respondents, such as those recruited via Amazon MTurk. The result is an unfortunate mismatch between test sample and target population. Essentially, we should probably expect people who sign up to participate in a paid survey to be motivated by different outcomes than fronltine workers in general.
+However, previous studies have often relied on _paid_ survey respondents, such as those recruited via Amazon MTurk. The result is an unfortunate mismatch between test sample and target population. Essentially, we should probably expect people who sign up to participate in a paid survey to be motivated by different outcomes than frontline workers in general.
 
-To test how well reflection tasks do among real-world public servants, I did a replicationof a recent study by [Vogel and Willems](https://academic.oup.com/jpart/article/30/3/485/5709532). My replication study was set among  412 Danish caseworkers working with unemployed clients. 
+To test how well reflection tasks do among real-world public servants, I did a replication of a recent study by [Vogel and Willems](https://academic.oup.com/jpart/article/30/3/485/5709532). My replication study was set among  412 Danish caseworkers working with unemployed clients. 
 
-I found that the effect sizes of reflection tasks are likely smaller when deployed “in the wild.” And so we should probably be critical when we consider how much we can get from low-cost reflection tasks. 
+@fig-replication is the key graph from the paper. The control group was not asked to do any reflection task but simply answered a few questions about job satisfaction and turnover intention. The *prosocial* treatment group reflected on a recent impact they had made on a specific client, whereas the *societal* treatment group reflected on a recent impact on society more generally.  
 
-Here's a graph from the paper. The control group was not asked to do any reflection task but simply answered a few questions about job satisfaction and turnover intention. The *prosocial* treatment group reflected on a recent impact they had made on a specific client, whereas the *societal* treatment group reflected on a recent impact on society more generally. 
-
-@fig-replication is the key graph from the paper. As you can see from the graph, there is really no difference between any of the groups, and this indifference holds for both outcomes.  
+As you can see from the graph, there is really no difference between any of the groups, and this indifference holds for both outcomes. Thus, my key claim was that the effect sizes of reflection tasks are likely smaller when deployed “in the wild.” And so we should probably be critical when we consider how much we can get from low-cost reflection tasks.   
 
 ![Outcomes across experimental conditions](featured.jpg){#fig-replication}
 
