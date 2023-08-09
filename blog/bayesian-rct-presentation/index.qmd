@@ -2,7 +2,7 @@
 title: "Bayesian analysis of a randomized controlled trial III: Interpretation and presentation"
 description: "Final part of my three-part series on Bayesian analysis of randomized controlled trials. Get ready to interpret and present your results!"
 author: 'Paw Hansen'
-date: '2023-07-02'
+date: '2023-07-13'
 image: "featured.jpg"
 categories: [Bayesian modeling, presentation]
 editor_options: 

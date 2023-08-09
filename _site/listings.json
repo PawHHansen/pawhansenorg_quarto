@@ -3,8 +3,8 @@
     "listing": "/blog.html",
     "items": [
       "/blog/bayesian-rct-presentation/index.html",
-      "/blog/bayesian-rct-spec-priors/index.html",
       "/blog/bayesian-rct-validation/index.html",
+      "/blog/bayesian-rct-spec-priors/index.html",
       "/blog/dot-dot-dot/index.html",
       "/blog/toolbox-rdd/index.html",
       "/blog/toolbox-rct/index.html",

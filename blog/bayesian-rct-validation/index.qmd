@@ -20,7 +20,11 @@ The aim of this post is to _validate_ our models. Basically, we'll be asking two
 1. How well does the model fit the data?
 2. How well does the model fit _new_ data?
 
-```{r packages}
+```{r}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+#| warning: false
+#| message: false
 
 library(tidyverse)
 library(rstanarm)
@@ -91,7 +95,6 @@ Recall our two models from my previous post:
 
 * In one model, I used a _weakly informative prior_ 
 * In another, model I used an _evidence-based prior_
-
 
 Before moving on, we should check the stability of our simulations. 
 
