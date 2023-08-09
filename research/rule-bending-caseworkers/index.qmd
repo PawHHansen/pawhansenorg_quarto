@@ -34,4 +34,4 @@ Here is key figure from the paper:
 
 ![Causal effect of various client attributes on caseworker sanctioning](featured.jpg){#fig-rule-bending}
 
-You can download a preprint of the article [here](https://www.pawhansen.org/research/rule-bending-caseworkers/rule-bending-preprint.pdf).  
+You can download a preprint of the article [here](https://www.pawhansen.org/research/rule-bending-caseworkers/preprint.pdf).  
