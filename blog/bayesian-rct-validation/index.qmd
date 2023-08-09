@@ -2,7 +2,7 @@
 title: "Bayesian analysis of a randomized controlled trial II: Defining and validating
   the model"
 author: 'Paw Hansen'
-date: '2023-07-02'
+date: '2023-07-05'
 description: "Part two of my three-part series on Bayesian analysis of randomized controlled trials. You've built a model but is it any good?"
 image: "featured.jpg"
 categories: [Bayesian modeling]
@@ -19,12 +19,6 @@ The aim of this post is to _validate_ our models. Basically, we'll be asking two
 
 1. How well does the model fit the data?
 2. How well does the model fit _new_ data?
-
-For the first question, we will do posterior predictive simulation to see if data simulated from the model has features similar to the original data (which was used to fit the model). 
-
-For the second question, we will 
-
-The packages we'll be using: 
 
 ```{r packages}
 
