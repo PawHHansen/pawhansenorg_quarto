@@ -1,0 +1,190 @@
+---
+title: "We should probably test that: writing tests to varify your data is what you think it is"
+description: "Writing tests to varify your data is what you think it is"
+author: "Paw Hansen"
+date: "5/22/2021"
+image: "featured.jpg"
+categories: [statistical analysis]
+editor_options: 
+  chunk_output_type: console
+bibliography: references.bib
+---
+
+I am working my through the so-far-wonderful book [*Telling stories with data*](https://tellingstorieswithdata.com) by Rohan Alexander. One thing I really like about the book is the heavy emphasis on simulation and all the things you can do with that: present results, validate models, plan research designs, and many, many other common tasks when doing research. 
+
+Another part to like is the discussion on how you should write tests throughout a data science project. You want to make sure your data *is* what you *think* it is. For instance, you might *think* that all your key variables are of the right class - but you should probably test that!
+
+This is one thing I would have liked to know more about when I started out doing statistical analysis. Back then, I would often run into the problem that my code would not run[^1]. Often, this was due to tiny issues in the data: a variable that should have been a factor was perhaps coded as a character. Or, in the process of joining multiple datasets, I had lost some observations without noticing.
+
+[^1]: That still happens! But at least not as often, and now I know better what to do about it. Also, occasionally my code *would* run - but give me wrong results.
+
+These 'little things', make up a huge part of what makes data science occasionally frustrating. And they can undermine an otherwise well-thought and thoroughly-carried-out analysis.
+
+```{r packages}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(kableExtra)
+
+theme_set(theme_minimal(base_size = 14))
+
+```
+
+### So what tests should I write?
+
+Writing test sounds harder than it is. Of course, while some tests can be quite long to write and hard to get your head around, most takes only a few seconds to write-and-run, and doing so will save you considerable time. *Trust me*.
+
+Rohan recommends the following suite of minimum things to test for:
+
+1.  **Internal validity**: class of the variables, their unique values, and the number of observations.
+2.  **Internal consistency**: if, for example, there is total_score variable, you want to make sure it's actually the sum of its parts
+3.  **External validity**: compare with data form outside. For instance, if you have data on the GDP in Europe in your dataset, make sure that those values match those of, say, what you can get from the World Bank or other trusworthy sources.
+
+Internal consistency and external validity are quite project-specific, so I'll focus on internal validity.
+
+Following Alexander's advice, you should pay attention to the following:
+
+-   boundary conditions,
+-   classes,
+-   missing data,
+-   the number of observations and variables,
+-   duplicates, and
+-   regression results.
+
+Two quick ways of testing are (1) make a graph and (2) look at counts. A final and (3) is to write out formal test, resulting in a true/false. Importantly, you don't have run a whole bunch of tests. Write a few, perhaps targeting specific areas of concern.
+
+### Examples 
+Let's have look at a few examples. Say we intended to do a survey on adult people's preferences for desert. Specifically, we want to know if people prefer ice cream or pancakes, and how these preferences relate to respondents' age and sex. 
+
+One cool aspect about testing is that we can simulate data ahead of running the survey, write tests for the simulated data - and then use those exact same tests for when we have acquired the actual data!  
+
+Let's simulate some data, which will contain several problems: 
+
+```{r}
+#| warning: false
+#| message: false
+#| label: sim-dat
+
+set.seed(2208)
+
+n_people <- 1000
+
+sim_dat <- 
+  tibble(
+    age = runif(n_people, 16, 75) |> round(),
+    sex = sample(c("male", "female", NA), 
+                 n_people, 
+                 replace = T,
+                 prob = c(.4, .4, .2)),
+    preference = sample(c("ice cream", "pancakes", "broccoli"), 
+                     n_people, 
+                     replace = T,
+                     prob = c(.49, .49, .2))
+  )
+
+```
+
+*Boundary conditions*. Working our way through the list of attention points from above, let's begin by testing the boundary conditions. We have one numeric variable, age. Say, we only care about people between 18 and 90 years. We could make a basic histogram:
+
+```{r}
+
+sim_dat |> 
+  ggplot(aes(age)) + 
+  geom_histogram(binwidth = 1, 
+                 color = "white", 
+                 fill = "lightblue") +
+  geom_vline(xintercept = 18, color = "firebrick", lty = "dashed") + 
+  geom_vline(xintercept = 90, color = "firebrick", lty = "dashed") + 
+   labs(
+    x = "Age of respondent",
+    y = "Number of respondents")
+
+```
+
+The histogram reveals that we have people in our sample who a under 18 and perhaps should be excluded. Another way of doing the same test but using code could be: 
+
+```{r}
+
+str_c(mean(sim_dat$age >= 18 & sim_dat$age< 90) * 100, 
+      " percent of observations passes the test")
+
+```
+
+For the two categorical variables, sex and preference, we could do a basic count:
+
+```{r}
+
+sim_dat |> 
+  count(sex)
+
+sim_dat |> 
+  count(preference)
+
+```
+
+For sex, we have several missing values that we would have to consider. Again, we could write a test to tell exactly how many respondents had missing values on the sex variable:
+
+```{r}
+
+str_c(mean(is.na(sim_dat$sex)) * 100, " percent of respondents have missing values on the sex variable")
+
+```
+
+We could also just ask, if the variable had no missing values and hence could pass a true/false test:
+
+```{r}
+mean(is.na(sim_dat$sex)) == 0
+```
+
+For the outcome variable, several respondents prefer broccoli, which wasn't one of the two options we intended to study. This should warn us that the survey was set up wrong[^2]. 
+
+[^2]: In a real-life study, this type of error should probably make us consider if our survey had been implemented in such a flawed way that we could not use the data at all.  
+
+*Classes*. A quick and informal way of looking at the class is using `glimpse()`:
+```{r}
+
+sim_dat |> 
+  glimpse()
+
+```
+
+Both sex and preference are coded as characters but they should probably be factors. We can easily change that, though. Let's also clean up the other issues: 
+
+```{r}
+
+sim_dat_cleaned <- 
+  sim_dat |> 
+  filter(age >= 18) |> # drop respondents under 18 
+  drop_na(sex) |>  # drop respondents with NAs on the sex variable - requires some consideration
+  filter(preference %in% c("ice cream", "pancakes")) |> 
+  mutate(sex = as.factor(sex),
+         preference = as.factor(preference))
+
+```
+
+And now we have cleaned dataset, which would pass our tests. Just one example: 
+
+```{r}
+sim_dat_cleaned |> 
+  ggplot(aes(age)) + 
+  geom_histogram(binwidth = 1, 
+                 color = "white", 
+                 fill = "lightblue") +
+  geom_vline(xintercept = 18, color = "firebrick", lty = "dashed") + 
+  geom_vline(xintercept = 90, color = "firebrick", lty = "dashed") + 
+   labs(
+    x = "Age of respondent",
+    y = "Number of respondents")
+```
+
+
+### Final thought: writing tests
+
+Writing test prior to data analysis can save you time spent debugging code and also increase confidence in your results because your model is built with the data you think it is. In this post, I have mentioned three basic ways of testing your data: graphing, counting, and writing formal tests. Now, go on and test your data!  
+
+### Cool! Where can I learn more?
+
+-   Alexander, R. (2023). *Telling Stories with Data: With Applications in R*. CRC Press.

@@ -64,5 +64,8 @@
   },
   "blog/bayesian-rct-validation/index.qmd": {
     "index.html": "f80c97d3"
+  },
+  "blog/writing-tests/index.qmd": {
+    "index.html": "9e63d2dc"
   }
 }
