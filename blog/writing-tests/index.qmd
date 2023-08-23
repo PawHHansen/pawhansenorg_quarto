@@ -1,13 +1,12 @@
 ---
-title: "We should probably test that: writing tests to varify your data is what you think it is"
-description: "Writing tests to varify your data is what you think it is"
+title: "You should probably test that: writing tests to ensure data quality"
+description: "No one likes to be surprised when it comes to data quality. Writing tests will help you varify your data is what you think it is"
 author: "Paw Hansen"
-date: "5/22/2021"
+date: "8/23/2023"
 image: "featured.jpg"
 categories: [statistical analysis]
 editor_options: 
   chunk_output_type: console
-bibliography: references.bib
 ---
 
 I am working my through the so-far-wonderful book [*Telling stories with data*](https://tellingstorieswithdata.com) by Rohan Alexander. One thing I really like about the book is the heavy emphasis on simulation and all the things you can do with that: present results, validate models, plan research designs, and many, many other common tasks when doing research. 
@@ -90,6 +89,7 @@ sim_dat <-
 *Boundary conditions*. Working our way through the list of attention points from above, let's begin by testing the boundary conditions. We have one numeric variable, age. Say, we only care about people between 18 and 90 years. We could make a basic histogram:
 
 ```{r}
+#| fig-cap: "A quick histogram is great for identifying if observations fall outside meaningful bondaries."
 
 sim_dat |> 
   ggplot(aes(age)) + 
@@ -97,7 +97,17 @@ sim_dat |>
                  color = "white", 
                  fill = "lightblue") +
   geom_vline(xintercept = 18, color = "firebrick", lty = "dashed") + 
+  annotate(geom = "text", 
+           label = str_wrap("Danger zone", 6), 
+           x = 8, 
+           y = 20, 
+           color = "firebrick") + 
+  annotate(geom = "text", 
+           label = "Everything is fine", 
+           x = 53, 
+           y = 28) + 
   geom_vline(xintercept = 90, color = "firebrick", lty = "dashed") + 
+  xlim(0, 90) + 
    labs(
     x = "Age of respondent",
     y = "Number of respondents")
@@ -181,7 +191,7 @@ sim_dat_cleaned |>
 ```
 
 
-### Final thought: writing tests
+### Final thoughts: writing tests
 
 Writing test prior to data analysis can save you time spent debugging code and also increase confidence in your results because your model is built with the data you think it is. In this post, I have mentioned three basic ways of testing your data: graphing, counting, and writing formal tests. Now, go on and test your data!  
 
