@@ -55,7 +55,7 @@ Following Alexander's advice, you should pay attention to the following:
 
 Two quick ways of testing are (1) make a graph and (2) look at counts. A final and (3) is to write out formal test, resulting in a true/false. Importantly, you don't have run a whole bunch of tests. Write a few, perhaps targeting specific areas of concern.
 
-### Examples 
+### Some examples 
 Let's have look at a few examples. Say we intended to do a survey on adult people's preferences for desert. Specifically, we want to know if people prefer ice cream or pancakes, and how these preferences relate to respondents' age and sex. 
 
 One cool aspect about testing is that we can simulate data ahead of running the survey, write tests for the simulated data - and then use those exact same tests for when we have acquired the actual data!  
@@ -66,6 +66,7 @@ Let's simulate some data, which will contain several problems:
 #| warning: false
 #| message: false
 #| label: sim-dat
+#| code-fold: false
 
 set.seed(2208)
 
@@ -86,7 +87,7 @@ sim_dat <-
 
 ```
 
-*Boundary conditions*. Working our way through the list of attention points from above, let's begin by testing the boundary conditions. We have one numeric variable, age. Say, we only care about people between 18 and 90 years. We could make a basic histogram:
+Looking at the list above, let's begin by testing the boundary conditions. We have one numeric variable: age. Say, our survey was only supposed to go out to people between 18 and 90 years. To check, we could make a basic histogram:
 
 ```{r}
 #| fig-cap: "A quick histogram is great for identifying if observations fall outside meaningful bondaries."
@@ -96,7 +97,6 @@ sim_dat |>
   geom_histogram(binwidth = 1, 
                  color = "white", 
                  fill = "lightblue") +
-  geom_vline(xintercept = 18, color = "firebrick", lty = "dashed") + 
   annotate(geom = "text", 
            label = str_wrap("Danger zone", 6), 
            x = 8, 
@@ -106,7 +106,7 @@ sim_dat |>
            label = "Everything is fine", 
            x = 53, 
            y = 28) + 
-  geom_vline(xintercept = 90, color = "firebrick", lty = "dashed") + 
+  geom_vline(xintercept = c(18, 90), color = "firebrick", lty = "dashed") + 
   xlim(0, 90) + 
    labs(
     x = "Age of respondent",
@@ -114,7 +114,7 @@ sim_dat |>
 
 ```
 
-The histogram reveals that we have people in our sample who a under 18 and perhaps should be excluded. Another way of doing the same test but using code could be: 
+The histogram reveals that we have people in our sample who a under 18; they should probably be excluded. Another way of doing the same test would be to see how many observations fall in the right range. This number should of course be 100 percent.  
 
 ```{r}
 
@@ -153,7 +153,8 @@ For the outcome variable, several respondents prefer broccoli, which wasn't one 
 
 [^2]: In a real-life study, this type of error should probably make us consider if our survey had been implemented in such a flawed way that we could not use the data at all.  
 
-*Classes*. A quick and informal way of looking at the class is using `glimpse()`:
+Before we go, let's also have a look at the variable classes since having variables coded as the wrong class can have substantial impact on your analysis. A quick and informal way of looking at the class is by using `glimpse()`:
+
 ```{r}
 
 sim_dat |> 
@@ -161,7 +162,7 @@ sim_dat |>
 
 ```
 
-Both sex and preference are coded as characters but they should probably be factors. We can easily change that, though. Let's also clean up the other issues: 
+Both sex and preference are coded as characters but they should probably be factors. We can easily change that, though. Let's also clean up the other issues from before: 
 
 ```{r}
 
