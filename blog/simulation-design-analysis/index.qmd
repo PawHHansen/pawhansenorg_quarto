@@ -1,6 +1,6 @@
 ---
-title: "Using simulation for design analysis: a field guide"
-description: "How simulation can help you make better design decisions ahead of collecting data"
+title: "Using simulation for design analysis: A field guide"
+description: "How simulation can help you make better design decisions ahead of collecting data."
 author: "Paw Hansen"
 date: "8/26/2023"
 image: "featured.jpg"
@@ -47,11 +47,11 @@ Simple as that.
 
 Let us work our way through a running example. Suppose we were interested in running a randomized experiment with the aim of improving student test scores.
 
-### Prior assumptions
+### Step #1: Specify prior assumptions
 
 Based on previous studies, we think the treatment effect could be about five. Previous studies have used samples of about 100 students, so we think this could be a good place for us to start. Also, students in general usually have had test scores with a mean of 60 plus or minus about 20 points.
 
-### **Simulate one dataset**
+### **Step #2: Simulate one dataset**
 
 Let us simulate one dataset based on those assumptions:
 
@@ -128,13 +128,14 @@ modelsummary(models = list(
 
 This time we get a very different estimate of the treatment effect. Clearly, our the results from a 100 subject experiment is not very trustworthy, given our assumptions.
 
-### Turning the simulation into a function and repeating in 1,000 times
+### Step #3: Turn the simulation into a function and repeat it
 
 Rather than keep making new datasets "by hand", we can write a function to systematically study the variation across resamples.
 
 To set up the simulation for replication, we first turn our initial simulation into a function:
 
 ```{r}
+#| code-fold: false
 
 sim_my_data <- function(n_subjects = 100, treat_effect = 5) {
   
@@ -163,6 +164,7 @@ sim_my_data() |>
 Looks right. Now we can use `map()` to repeat our simulation 1,000 times:
 
 ```{r}
+#| code-fold: false
 
 many_sims <- 
   tibble(
@@ -175,6 +177,7 @@ many_sims <-
 And instead of fitting the model to just *one* simulated dataset, we can fit *1,000 models* - one for each dataset. This will help us study the variation in the quantities we are interested in:
 
 ```{r}
+#| code-fold: false
 
 many_sims <- 
   many_sims |> 
@@ -193,6 +196,7 @@ As a final step, let's make two new list colums:
 2.  one using `glance` which will store information about each model, such as R\^2 etc.
 
 ```{r}
+#| code-fold: false
 
 many_sims <- 
   many_sims |> 
@@ -206,6 +210,7 @@ Finally, we can unnest our tidied and glanced list columns so they are easier to
 ```{r}
 #| warning: false
 #| message: false
+#| code-fold: false
 
 many_sims_unnested <- 
   many_sims |> 
@@ -214,9 +219,9 @@ many_sims_unnested <-
 
 ```
 
-### Using the simulated datasets for answering questions about our design
+### Step #4: Use the simulated datasets to answer questions about the design
 
-With our datasets and models in place, we can start interrogating the design. For example, what can we say about the standard error of the treatment?
+With our datasets and models in place, we can start interrogating the design. For example, what can we say about the **standard error of the treatment**?
 
 Our two initial models suggested that the standard error was about 4, but we can study its variation more systematically:
 
@@ -276,7 +281,7 @@ many_sims_unnested |>
 
 ```
 
-In statistical parlance, this quantity is known as the statistical power: the likelihood of a hypothesis test detecting a true effect if there is one. With 100 subjects, we get a power of about 25 percent - much too low if our goal is to learn anything. Put another way, we incorrectly reject the true treatment effect about 75 percent of the time.
+In statistical parlance, this quantity is known as the **statistical power**: the likelihood of a hypothesis test detecting a true effect if there is one. With 100 subjects, we get a power of about 25 percent - much too low if our goal is to learn anything. Put another way, we incorrectly reject the true treatment effect about 75 percent of the time.
 
 In case we wanted to, we could also make a plot:
 
@@ -302,7 +307,7 @@ many_sims_unnested |>
 
 Looking at the *p*-values and the treatment effect standard errors gives tells us something about how well we can trust the estimated treatment effect (not much, it turns out).
 
-But we could also study some properties of the overall model. For example, what is the coverage of say, the 68 and 95 percent confidence intervals?
+But we could also study some properties of the overall model. For example, what is the **coverage** of say, the 68 and 95 percent confidence intervals?
 
 ```{r}
 
@@ -350,7 +355,7 @@ many_sims_unnested |>
 
 ```
 
-Finally, let's also have a look at how R\^2 behaves across simulations:
+Finally, let's also have a look at how **R^2^** behaves across simulations:
 
 ```{r}
 

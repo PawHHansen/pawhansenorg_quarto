@@ -1,5 +1,5 @@
 ---
-title: "We better test that: writing tests to ensure data quality"
+title: "We better test that: Writing tests to ensure data quality"
 description: "No one likes to be surprised when it comes to data quality. Writing tests will help you varify your data is what you think it is"
 author: "Paw Hansen"
 date: "8/23/2023"
