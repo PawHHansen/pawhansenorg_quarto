@@ -67,5 +67,8 @@
   },
   "blog/writing-tests/index.qmd": {
     "index.html": "9e63d2dc"
+  },
+  "blog/simulation-design-analysis/index.qmd": {
+    "index.html": "03a76856"
   }
 }
