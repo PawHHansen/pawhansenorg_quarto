@@ -9,11 +9,13 @@ editor_options:
   chunk_output_type: inline
 ---
 
-If you've ever done a research project, at some point, someone has likely asked you the following question: is our n large enough? What this person is asking concerns \_design analysis\_: understanding the properties of your research design, usually before you start collecting any data.
+If you've ever done a research project, at some point someone has likely asked you the following question: Is your n large enough? What this person is asking concerns *design analysis*: analyzing how different properties of your design will affect your potential conclusions.
 
-Not doing design analysis will cause you problems. For example, you might run an intervention study with no chance of detecting the treatment effect.
+Not doing design analysis ahead of the actual data collection will cause you problems. For example, you might run an intervention study with no chance of detecting the treatment effect.
 
-In this post, I'll show you a general way to approach design analysis using simulation. As it turns out, using simulation is a much more rigorous way to think about your research design than simply throwing your proposed n into an online 'power calculator'. With simulation, you can study all relevant properties of the design; including n, minimum detectable treatment effect size, standard error of the treatment effect, statistical power of the study, and anything else you might think would be nice to know before running your study.
+In this post, I'll show you a general way to approach design analysis using simulation. As it turns out, using simulation is a rigorous way to think about your research design, and it is far better than what is usually done such as throwing your proposed n into some online 'power calculator'.
+
+With simulation, you can study all relevant properties of your design; including n, minimum detectable treatment effect size, standard error of the treatment effect, statistical power of the study, and anything else you might think would be nice to know before running your study.
 
 ```{r}
 #| code-fold: true
@@ -29,11 +31,11 @@ theme_set(theme_minimal(base_size = 14))
 
 ```
 
-### Using simulation for design analysis
+### How to use simulation for design analysis: four steps
 
-The workflow goes something like this:
+The workflow I propose goes something like this:
 
-1.  State your assumptions about the future data (sample size, treatment effect, etc.),
+1.  Carefully consider any prior assumptions about the future data (sample size, treatment effect, etc.),
 
 2.  simulate *one* dataset based on those assumptions,
 
@@ -41,15 +43,21 @@ The workflow goes something like this:
 
 4.  study the properties of those datasets using summary statistics and/or graphs.
 
-Vòila.
+Simple as that.
 
-Let us work our way thorugh a running example. Suppose we were interested in running a randomized experiment with the aim of improving student test scores.
+Let us work our way through a running example. Suppose we were interested in running a randomized experiment with the aim of improving student test scores.
 
-Based on previous studies, we think the treatment effect is about five. Previous studies have used samples of about 100 students, so we think this could be a good place for us to start. Also, students usually have had test scores with a mean of 60 plus or minus about 20 points.
+### Prior assumptions
 
-Let us simulate a dataset based on those assumptions:
+Based on previous studies, we think the treatment effect could be about five. Previous studies have used samples of about 100 students, so we think this could be a good place for us to start. Also, students in general usually have had test scores with a mean of 60 plus or minus about 20 points.
+
+### **Simulate one dataset**
+
+Let us simulate one dataset based on those assumptions:
 
 ```{r}
+#| code-fold: false
+
 set.seed(2608)
 
 n_subjects <- 100
@@ -67,7 +75,7 @@ dat <- tibble(
 
 ```
 
-Let's fit an intial model to our simulated data:
+We can fit an initial model to our simulated data:
 
 ```{r}
 
@@ -82,11 +90,13 @@ modelsummary(models = list(
 
 ```
 
-Looking at the results, `r n_subjects` subjects for the experiment should make us worry. Although the estimated treatment effect is clearly statistically significant, it is far larger than the true treatment effect, which we set to 5. In addition, looking at the standard error of about `r round(mod_1$coefficients[2, 2], 1)`, is seems impossible to estimate a treatment effect of five.
+Looking at the results, `r n_subjects` subjects for the experiment should make us worry. For one thing, the estimated treatment effect is much smaller than the true treatment effect, which we set to 5. In addition, looking at the standard error of `r round(mod_1$coefficients[2, 2], 1)`, is seems impossible that we could ever hope to detect a treatment effect of 5.
 
-What would happen if we were to run the simulation again, this time setting a different seed?
+What would happen if we were to run the simulation again, only this time setting a different seed?
 
 ```{r}
+#| code-fold: false
+
 set.seed(3009)
 
 y_if_control <- rnorm(n_subjects, 60, 20)
@@ -100,6 +110,10 @@ dat_2 <-
   outcome = ifelse(condition == "Control", y_if_control, y_if_treatment)
   )
 
+```
+
+```{r}
+
 mod_2 <- 
   summary(lm(outcome ~ condition, data = dat_2))
 
@@ -109,15 +123,16 @@ modelsummary(models = list(
   fmt = fmt_significant(2),
   stars = TRUE,
   title = "Estimated treatment effect from a randomized controlled trial with 100 subjects, take 2")
+
 ```
 
-Notice how we get a wildly different estimate of the treatment effect, reflecting that our 100 subject randomized trial is not very trustworthy.
-
-Still, we should study this variation more systematically, and simulation can help us do that. Let's turn our current approach into a function, so that we can repeat it many times.
+This time we get a very different estimate of the treatment effect. Clearly, our the results from a 100 subject experiment is not very trustworthy, given our assumptions.
 
 ### Turning the simulation into a function and repeating in 1,000 times
 
-To set up the simulation for replication, we first turn our once-off simulation into a function:
+Rather than keep making new datasets "by hand", we can write a function to systematically study the variation across resamples.
+
+To set up the simulation for replication, we first turn our initial simulation into a function:
 
 ```{r}
 
@@ -136,7 +151,7 @@ sim_my_data <- function(n_subjects = 100, treat_effect = 5) {
   
 ```
 
-Let's make sure that our function. does what we intend it to do:
+Let's make sure that our function does what we intend it to do:
 
 ```{r}
 
@@ -171,7 +186,11 @@ Now we have a list of simulated datasets with a model fit to each.
 
 ![1,000 dataatses and 1,000 models](screenshot_sims.png){#fig-sims}
 
-As a final step, let's make two new list colums: one using `tidy()` which will store our model estimates, and one using `glance` which will store information about each model, such as R\^2 etc.
+As a final step, let's make two new list colums:
+
+1.  one using `tidy()` which will store our model estimates, and
+
+2.  one using `glance` which will store information about each model, such as R\^2 etc.
 
 ```{r}
 
@@ -197,7 +216,9 @@ many_sims_unnested <-
 
 ### Using the simulated datasets for answering questions about our design
 
-With our datasets and models in place, we can start interrogating the design. For example, what can we say about the standard error from running such a design? Our two initial models suggested that the standard error was about 4, but we can study its variation more systematically:
+With our datasets and models in place, we can start interrogating the design. For example, what can we say about the standard error of the treatment?
+
+Our two initial models suggested that the standard error was about 4, but we can study its variation more systematically:
 
 ```{r}
 #| label: fig-stderror-hist
@@ -215,7 +236,7 @@ many_sims_unnested |>
 
 As @fig-stderror-hist reveals, our standard error would range between about 3.5 and 4.5. If that is enough for our purpose, then fine. But being that we expect a treatment effect of about 5, we should not set our hopes up for achieving any "statistical significance".
 
-To get statistical significance, the standard error needs to be less than two times the treatment effect, i.e. \<2.5. Say we were going for a standard error of 2. In that case, since the standard error drops with the square root of the sample size, we would need about 400 subjects.
+To get statistical significance, the standard error needs to be less than half the treatment effect, i.e. \<2.5. To be on the safe side, say we were going for a standard error of 2. In that case, since the standard error drops with the square root of the sample size, we would need about 400 subjects.
 
 ```{r}
 #| code-fold: true
@@ -279,7 +300,9 @@ many_sims_unnested |>
 
 ```
 
-Looking at the *p*-values and standard errors of the treatment effect gives us some information about how well we can trust the estimated treatment effect (not much, it turns out). We could also study some properties of the overall model. For example, what is the coverage of say, the 68 and 95 percent confidence intervals?
+Looking at the *p*-values and the treatment effect standard errors gives tells us something about how well we can trust the estimated treatment effect (not much, it turns out).
+
+But we could also study some properties of the overall model. For example, what is the coverage of say, the 68 and 95 percent confidence intervals?
 
 ```{r}
 
@@ -353,7 +376,7 @@ many_sims_unnested |>
 
 ### Final thoughts: Using simulation for design analysis
 
--   Benefits of following through with the solution.
+Simulation is an incredibly useful way of studying the properties of of a research design. Once the resamples are made, you can study basically *any* property of the design: power, standard errors, minimum detectable effect size, etc.
 
 ### Cool! Where can I learn more?
 
