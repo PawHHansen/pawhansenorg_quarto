@@ -70,5 +70,8 @@
   },
   "blog/simulation-design-analysis/index.qmd": {
     "index.html": "03a76856"
+  },
+  "blog/simulation-design-analysis-pt2/index.qmd": {
+    "index.html": "6c373bbb"
   }
 }

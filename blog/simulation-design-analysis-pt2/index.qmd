@@ -1,0 +1,192 @@
+---
+title: "Using simulation for design analysis part II: Iterating over multiple values"
+description: "Analyze the properties of your design, varying multiple features at once."
+author: "Paw Hansen"
+date: "9/12/2023"
+image: "featured.jpeg"
+categories: [statistical analysis]
+editor_options: 
+  chunk_output_type: console
+---
+
+In my [previous post](https://www.pawhansen.org/blog/simulation-design-analysis/), I showed how you can use simulation to study the properties of different design choices.  
+
+In this follow-up post, we'll expand on those ideas a bit by writing code that will allow us to study several features of the design at once. That is, we'll simulate data; varying both the number of subjects _and_ the treatment effect size. 
+
+```{r}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(broom)
+library(scales)
+library(modelsummary)
+
+theme_set(theme_minimal(base_size = 14))
+
+```
+
+We begin with the same function as in my previous post. This will simulate _one_ dataset based on the number of subjects and treatment effect size you provide:  
+
+```{r}
+#| code-fold: false
+#| warning: false
+#| message: false
+
+sim_my_data <- function(n_subjects = NULL, treat_effect = NULL) {
+  
+  y_if_control <- rnorm(n_subjects, 60, 20)
+  y_if_treatment <- y_if_control + treat_effect
+  
+  tibble(
+    condition = sample(x = rep(c("Control", "Treated"), n_subjects/2), 
+                     size = n_subjects, 
+                     replace = TRUE),
+    outcome = ifelse(condition == "Control", y_if_control, y_if_treatment)
+  )
+}
+
+```
+
+### Iterating over multilple features at once
+
+Now we can iterate that function over several different input values. Let's say we wanted to study the propteries of our design across the following: 
+
+* number of subjects: 25, 50, 100, 250, 400
+* treatment effect sizes: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, and 10.
+
+Then, using `map2()` from the `purrr` packages, the code would look something like this:
+
+```{r}
+#| code-fold: false
+#| warning: false
+#| message: false
+
+set.seed(1409)
+
+dat <- 
+  crossing(
+  trial = 1:500,
+  n_subjects = c(25, 50, 100, 250, 400),
+  treat_effect = seq(0, 10, by = 1)
+  ) |> 
+  mutate(
+    fake_dat = map2(.x = n_subjects, 
+                    .y = treat_effect,
+                    .f = sim_my_data)
+  )
+```
+
+Notice that it takes some time to run - we're producing 55,000 datasets! If you're short on time, one option would be to use parallel processing.
+
+With our simulations, we can fit a model to each simulated dataset before using `tidy()` to extract the information we need:
+
+```{r}
+#| code-fold: false
+#| warning: false
+#| message: false
+
+dat <- 
+  dat |> 
+    mutate(model = map(fake_dat, ~lm(outcome ~ condition, data =.)),
+           tidied = map(model, tidy))
+```
+
+Finally, we'll unnest the tidied results so that we can work with them: 
+
+```{r}
+#| code-fold: false
+#| warning: false
+#| message: false
+
+dat <- 
+  dat |> 
+  unnest(.cols = tidied)
+
+```
+
+### Using the simulations to study the proporties of different design features
+
+Now we are ready to interrogate our design. 
+
+Let us use our simulations to calculate the power associated with different numbers of subjects _and_ different treatment effects sizes.  
+
+```{r}
+#| code-fold: false
+#| warning: false
+#| message: false
+
+power_rs <- 
+  dat |> 
+  group_by(n_subjects, treat_effect) |> 
+  summarize(power = mean(p.value <= 0.05))
+
+power_rs 
+```
+
+And let's make a plot to see how things behave: 
+
+```{r}
+#| label: fig-power
+#| fig-cap: "Statistical power for different potential designs, varying both the treatment effect and the number of participating subjects."
+
+power_rs |> 
+  mutate(n_subjects = as.factor(n_subjects)) |> 
+  ggplot(aes(treat_effect, power)) +
+  geom_line(aes(color = n_subjects)) +
+  scale_color_brewer(palette = "Set1") + 
+  scale_y_continuous(labels = percent_format()) + 
+  labs(x = "Potential treatment effects",
+       y = "Statistical power",
+       color = "Number of subjects") + 
+  theme(legend.position = "bottom")
+
+```
+
+We could also compute the standard error of the treatment effects to analyze its variation:
+
+```{r}
+#| code-fold: false
+#| warning: false
+#| message: false
+
+rs <-
+  dat |> 
+  filter(term == "conditionTreated") |> 
+  group_by(n_subjects, treat_effect) |> 
+  summarize(error = mean(std.error))
+
+rs
+
+```
+
+There is a clear advantage of increasing n but the simulation also reminds us that the standard error does not depend on the treatment effect _size_:
+
+```{r}
+#| label: fig-error
+#| fig-cap: "Standard effor of the treatment effect for different potential designs, varying both the treatment effect size and the number of participating subjects."
+
+rs |> 
+  mutate(n_subjects = as.factor(n_subjects)) |> 
+  ggplot(aes(treat_effect, error)) +
+  geom_line(aes(color = n_subjects)) +
+  scale_color_brewer(palette = "Set1") + 
+  labs(x = "Potential treatment effects",
+       y = "Standard error",
+       color = "Number of subjects") +
+  theme(legend.position = "bottom")
+
+```
+
+Final note: When wring up this post, I first tried to simulate data for the case of only 10 subjects. This caused issues with running the code, because with only 10 subjects there is a significant chance that in some of your simulations, all subjects will be either treatment or control. This is not just an annoyance but a useful reminder and a good example of how trying to simulate data will make you aware of issues you had not even considered. 
+
+### Final thoughts: Using simulation for design analysis
+
+Using simulation is incredibly useful for many things. In this post, I have shown you how you can use simulating to study how assumptions about e.g. the treatment effect will affect your conclusions as well as the consequences of making different design choices (e.g. increasing n). 
+
+### Cool! Where can I learn more?
+
+-   Gelman, Hill, and Vehtari. (2020). *Regression and Other Stories*. Cambridge University Press.
+-   Alexander, R. (2023). *Telling Stories with Data: With Applications in R*. CRC Press.
