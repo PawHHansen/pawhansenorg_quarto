@@ -383,6 +383,8 @@ many_sims_unnested |>
 
 Simulation is an incredibly useful way of studying the properties of of a research design. Once the resamples are made, you can study basically *any* property of the design: power, standard errors, minimum detectable effect size, etc.
 
+[In this post, I have shown you how to study the consequences of manipulating one feature of the design at a time. In my [follow-up post](https://www.pawhansen.org/blog/simulation-design-analysis-pt2/), I show how to simulate datasets for multiple sample sizes, potential treatment effects etc.]
+
 ### Cool! Where can I learn more?
 
 -   Gelman, Hill, and Vehtari. (2020). *Regression and Other Stories*. Cambridge University Press.
