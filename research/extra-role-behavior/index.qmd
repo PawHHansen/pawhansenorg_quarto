@@ -26,4 +26,4 @@ Here is a figure from the paper:
 
 ![Causal effect of student attributes on teachers' extra-role behavior](featured.png){#fig-student-attributes}
 
-You can download a preprint of the article [here](https://www.pawhansen.org/research/rule-bending-caseworkers/preprint.pdf).  
+You can download a preprint of the article [here](https://www.pawhansen.org/research/extra-role-behavior/preprint.pdf).  
