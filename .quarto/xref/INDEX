@@ -76,5 +76,14 @@
   },
   "blog/internal-validation/index.qmd": {
     "index.html": "fe7d60c3"
+  },
+  "blog/toolbox-iv/index.qmd": {
+    "index.html": "942a92f1"
+  },
+  "research/extra-role-behavior/index.qmd": {
+    "index.html": "51230422"
+  },
+  "blog/case-study-bayesian-multilevel-modeling/index.qmd": {
+    "index.html": "5ae68c16"
   }
 }

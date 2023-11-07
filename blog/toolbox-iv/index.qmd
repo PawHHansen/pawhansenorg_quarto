@@ -7,13 +7,14 @@ image: featured.jpg
 description: 'All your econ friends are doing it. Get started with instrumental variables'
 editor_options: 
   chunk_output_type: console
+draft: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 ```
 
-New post for my [“policy evaluator’s toolbox” series](https://www.pawhansen.org/blog#category=policy%20evaluation)! Today, let's have stab at an instrumental variable analysis. 
+New post for my [“policy evaluator’s toolbox” series](https://www.pawhansen.org/blog#category=policy%20evaluation)! Today, let's have a stab at an instrumental variable analysis. 
 
 ```{r}
 #| message: false

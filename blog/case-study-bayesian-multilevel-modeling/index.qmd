@@ -7,6 +7,7 @@ image: "featured.jpg"
 categories: [statistical analysis]
 editor_options: 
   chunk_output_type: console
+draft: true
 ---
 
 I was reading up on (Bayesian multilevel modeling)[https://www.bayesrulesbook.com/chapter-17] the other day, and I thought I would do a quick post showing the whole game of how to apply Bayesian modeling to hierarchical data. Specifically, I'll work my way through the following exercise from _Bayes Rules!_: 
@@ -109,8 +110,8 @@ See 17.3.
 ```{r}
 set.seed(84735)
 
-voices %>% 
-  add_linpred_draws(object = voice_model_1)
+# voices %>% 
+#   add_linpred_draws(object = voice_model_1)
 ```
 
 

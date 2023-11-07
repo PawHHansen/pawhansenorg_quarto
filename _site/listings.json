@@ -2,7 +2,6 @@
   {
     "listing": "/blog.html",
     "items": [
-      "/blog/internal-validation/index.html",
       "/blog/simulation-design-analysis-pt2/index.html",
       "/blog/simulation-design-analysis/index.html",
       "/blog/writing-tests/index.html",
@@ -18,6 +17,7 @@
   {
     "listing": "/research.html",
     "items": [
+      "/research/extra-role-behavior/index.html",
       "/research/replication-motivation/index.html",
       "/research/rule-bending-caseworkers/index.html"
     ]
