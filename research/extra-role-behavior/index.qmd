@@ -1,5 +1,5 @@
 ---
-title: "Invisible frontline work: How client characteristics cause extra-role behaviours in public service'"
+title: "Invisible frontline work: How client characteristics cause extra-role behaviours in public service"
 description: 'Frontline workers will happily go beyond the call of duty for their students. But they are more willing to accommodate some students than others.'
 author: Paw Hansen
 date: '2023-10-26'
