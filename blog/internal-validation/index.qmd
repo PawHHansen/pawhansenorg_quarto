@@ -1,0 +1,196 @@
+---
+title: "Posterior predictive checking: Comparing observed data to replicated datasets from the model"
+description: "How well does your model fit your data? Simulation has the answer."
+author: "Paw Hansen"
+date: "9/22/2023"
+image: "featured.jpeg"
+categories: [statistical analysis]
+editor_options: 
+  chunk_output_type: console
+draft: true 
+---
+
+What's the problem?
+
+What are the basic assumptions of any statistical model? (measurement validity, functional form etc.)
+
+```{r}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(broom.mixed)
+library(MASS)
+library(rstanarm)
+library(bayesplot)
+library(modelsummary)
+
+theme_set(theme_minimal(base_size = 14))
+
+```
+
+Let's set up a basic model
+
+```{r}
+
+data("Animals")
+
+animals <- Animals |> 
+  mutate(specie = rownames(Animals))
+
+rm(Animals)
+
+```
+
+Fit a first (naive) model
+
+```{r}
+
+animals |> 
+  ggplot(aes(body, brain)) +
+  geom_point() 
+
+```
+
+
+```{r}
+
+animals |> 
+  ggplot(aes(body, brain)) +
+  geom_point() +
+  scale_x_log10() + 
+  scale_y_log10() + 
+  geom_smooth(method = "lm")
+
+```
+
+```{r}
+
+animals <- 
+  animals |> 
+  mutate(brain_log = log(brain),
+         body_log = log(body))
+
+```
+
+
+### By hand 
+
+```{r}
+
+mod_lm <- 
+  lm(brain_log ~ body_log, data = animals)
+
+```
+
+```{r}
+
+tidy(mod_lm)
+
+```
+
+```{r}
+
+glance(mod_lm)
+
+```
+
+
+```{r}
+
+library(broom)
+
+animals_aug <- 
+  augment(mod_lm)
+
+```
+
+```{r}
+
+animals_aug |> 
+  ggplot(aes(.fitted, .std.resid)) + 
+  geom_hline(yintercept = 0, color = "grey50", lty = "dashed") + 
+  geom_point() + 
+  labs(x = "Predicted values",
+       y = "Residuals")
+
+```
+
+
+
+
+### The easy way: Use `rstanarm`
+
+```{r}
+
+mod_stan <-
+  stan_glm(brain_log ~ body_log, 
+           prior_intercept = normal(location = 0, scale = 1, autoscale = F),
+           prior = normal(location = 0, scale = 1, autoscale = F),
+           data = animals)
+
+```
+
+```{r}
+
+modelsummary(mod_stan)
+
+```
+
+```{r}
+
+y_rep <- posterior_predict(mod_stan)
+
+```
+
+Now we can use some of the neat built-in functions to plot our replications and compare with the observed data.
+
+One way would be to use histograms:
+
+```{r}
+
+# Change plotting theme
+theme_set(bayesplot::theme_default(base_family = "sans"))
+
+ppc_hist(animals$brain_log, y_rep[1:19, ])
+
+```
+
+Or we could use density curves and make a "spaghetti plot":
+
+```{r}
+
+ppc_dens_overlay(animals$brain_log, y_rep[1:100, ]) + 
+  scale_y_continuous(breaks=NULL)
+
+```
+
+We can also use built-in functions to compute and visualize different test statistics. For example, let's make a histogram to plot the 25th percentile of the observed data against those of the replicated datasets:  
+
+```{r}
+
+ppc_stat(animals$brain_log, y_rep, stat = function(y) quantile(y, 0.25))
+
+```
+
+Or we could plot the standard deviation:
+
+```{r}
+#| label: fig-std
+#| fig-cap: "Standard deviation ..."
+
+ppc_stat(animals$brain_log, y_rep, stat = function(y) sd(y))
+
+```
+
+In both cases, this does not provide that much new information. The mean, mode and median of our replicated datasets are systematically lower than those in the observed data; indicating that there is some room for improvement in our model. 
+
+### Final thoughts: Using simulation for design analysis
+
+-
+
+### Cool! Where can I learn more?
+
+-   Gelman, Hill, and Vehtari. (2020). *Regression and Other Stories*. Cambridge University Press.

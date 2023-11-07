@@ -1,0 +1,144 @@
+---
+title: "The policy evaluator's toolbox: Presenting your next instrumental variable analysis"
+author: "Paw Hansen"
+date: '2023-11-03'
+categories: [statistical analysis, policy evaluation]
+image: featured.jpg
+description: 'All your econ friends are doing it. Get started with instrumental variables'
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+New post for my [“policy evaluator’s toolbox” series](https://www.pawhansen.org/blog#category=policy%20evaluation)! Today, let's have stab at an instrumental variable analysis. 
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(broom)
+library(ggsci)
+library(modelsummary)
+library(estimatr)
+
+theme_set(theme_minimal(base_size = 12))
+
+```
+
+For more on the details and theory behind IV, have a look at the free online version of [Telling stories with data](https://tellingstorieswithdata.com/14-causality_from_obs.html#instrumental-variables). 
+
+### Example 1: How does smoking affect your health?
+
+The problem is that whether people are smoking or not is not random. Rather, it is entangled in all kinds of other factors that might also affect health outcomes: education, gender, job type, and so on. 
+
+IV can help us. Having a tax on smoking will affect whether people smoke or not but not their health _except through smoking status_. 
+
+```{r}
+set.seed(853)
+
+num_observations <- 10000
+
+iv_example_data <- tibble(
+  person = c(1:num_observations),
+  smoker = 
+    sample(x = c(0:1), size = num_observations, replace = TRUE)
+  )
+```
+
+Add health outcomes: 
+
+```{r}
+iv_example_data <-
+  iv_example_data |>
+  mutate(health = if_else(
+    smoker == 0,
+    rnorm(n = n(), mean = 1, sd = 1),
+    rnorm(n = n(), mean = 0, sd = 1)
+  ))
+```
+
+And then different tax levels on smoking for each of the two provinces:
+
+```{r}
+iv_example_data <- iv_example_data |>
+  mutate(
+    province = case_when(
+      smoker == 0 ~ sample(
+        c("Nova Scotia", "Alberta"),
+        size = n(),
+        replace = TRUE,
+        prob = c(1/2, 1/2)
+      ),
+      smoker == 1 ~ sample(
+        c("Nova Scotia", "Alberta"),
+        size = n(),
+        replace = TRUE,
+        prob = c(1/4, 3/4)
+      )
+    ),
+    tax = case_when(province == "Alberta" ~ 0.3, 
+                    province == "Nova Scotia" ~ 0.5,
+                    TRUE ~ 9999999
+                    )
+    )
+
+iv_example_data
+```
+
+A first inspection of the data indicates that smoking does have some effect on health:
+
+```{r}
+
+iv_example_data |> 
+  mutate(smoker = as.factor(smoker)) |> 
+  ggplot(aes(smoker, health)) +
+  geom_jitter(aes(color = smoker), 
+                  alpha = .2) + 
+  facet_wrap(vars(province)) +
+  scale_color_uchicago() +
+  labs(y = "Health status",
+       x = "Smoker or not") + 
+  theme(legend.position = "bottom")
+
+```
+
+To estimate the effect, we do as follows:
+
+```{r}
+health_on_tax <- lm(health ~ tax, data = iv_example_data)
+smoker_on_tax <- lm(smoker ~ tax, data = iv_example_data)
+
+tibble(
+  coefficient = c("health ~ tax", "smoker ~ tax", "ratio"),
+  value = c(
+    coef(health_on_tax)["tax"],
+    coef(smoker_on_tax)["tax"],
+    coef(health_on_tax)["tax"] / coef(smoker_on_tax)["tax"]
+  )
+)
+```
+
+Another way would be to use `iv_robust()` from the `estimatr` package:
+
+```{r}
+#| label: tbl-iv-model
+#| tbl-cap: "Instrumental variable example using simulated data"
+
+iv_robust(health ~ smoker | tax, data = iv_example_data) |>
+  modelsummary()
+```
+
+
+### Final thoughts: Presenting your next instrumental variable analysis
+  
+
+### Cool! Where can I learn more?
+
+* Gelman, A., Hill, J., & Vehtari, A. (2020). _Regression and other stories_. Cambridge University Press.
+* 

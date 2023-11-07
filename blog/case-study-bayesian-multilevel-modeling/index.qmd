@@ -1,0 +1,133 @@
+---
+title: "Case study: A Bayesian multilevel analysis of xxx"
+description: "Playing around with xxx"
+author: "Paw Hansen"
+date: "10/2/2023"
+image: "featured.jpg"
+categories: [statistical analysis]
+editor_options: 
+  chunk_output_type: console
+---
+
+I was reading up on (Bayesian multilevel modeling)[https://www.bayesrulesbook.com/chapter-17] the other day, and I thought I would do a quick post showing the whole game of how to apply Bayesian modeling to hierarchical data. Specifically, I'll work my way through the following exercise from _Bayes Rules!_: 
+
+> "Does one’s voice pitch change depending on attitude? To address this question, Winter and Grawunder (2012) conducted a study in which each subject participated in various role-playing dialogs. These dialogs spanned different contexts (e.g., asking for a favor) and were approached with different attitudes (polite vs informal)."
+
+Sounds fun!
+
+```{r}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+#| warning: false
+#| message: false
+
+# Load packages
+library(bayesrules)
+library(tidyverse)
+library(rstanarm)
+library(bayesplot)
+library(tidybayes)
+library(broom.mixed)
+
+theme_set(theme_minimal(base_size = 14))
+
+# Load data
+data("voices", package = "bayesrules")
+
+```
+
+### Exercise 17.11 (Voices: check out some data) 
+
+Let's begin by checking out the data:
+
+```{r}
+glimpse(voices)
+
+voices |> 
+  group_by(subject) |> 
+  summarise((n_scenarios = n()))
+
+```
+
+So we have a total of 84 observations, and each subject participated in 14 scenarios ("dialogues").  
+
+```{r}
+voices |> 
+  ggplot(aes(pitch, subject)) + 
+  geom_boxplot()
+```
+
+Seems like we have some variation both within and across the five subjects. 
+
+### Exercise 17.12 (Voices: simulating the model)
+
+We'll assume that baseline voice pitch differs from subject to subject, but that the impact of attitude on voice pitch is similar among all subjects. That is, intercepts will vary but slopes will not. 
+
+```{r}
+
+voice_model_1 <- 
+  stan_glmer(
+  pitch ~ attitude + (1 | subject), 
+  data = voices, family = gaussian,
+  prior_intercept = normal(200, 10, autoscale = TRUE),
+  prior = normal(0, 2.5, autoscale = TRUE), 
+  prior_aux = exponential(1, autoscale = TRUE),
+  prior_covariance = decov(reg = 1, conc = 1, shape = 1, scale = 1),
+  chains = 4, iter = 5000*2, seed = 84735, 
+  prior_PD = FALSE)
+
+# Confirm the prior model specifications
+prior_summary(voice_model_1)
+
+```
+
+```{r}
+# Markov chain diagnostics
+mcmc_trace(voice_model_1)
+mcmc_dens_overlay(voice_model_1)
+mcmc_acf(voice_model_1)
+neff_ratio(voice_model_1)
+rhat(voice_model_1)
+
+# Overlaid densities 
+pp_check(voice_model_1)
+```
+
+```{r}
+tidy_summary_1 <- 
+  tidy(voice_model_1, effects = "fixed",
+                       conf.int = TRUE, conf.level = 0.95)
+
+tidy_summary_1
+```
+
+_Interpretation:_ 
+
+### Exercise 17.13 (Voices: focusing on the individual) 
+
+See 17.3. 
+```{r}
+set.seed(84735)
+
+voices %>% 
+  add_linpred_draws(object = voice_model_1)
+```
+
+
+Using `posterior_predict()`, simulate posterior predictive models of voice pitch in a new polite dialog for three different subjects: A, F, and you. Illustrate your simulation results using mcmc_areas() and discuss your findings.
+
+```{r}
+# Simulate posterior predictive models for the 3 runners
+set.seed(84735)
+predict_voices <- posterior_predict(
+  voice_model_1, 
+  newdata = data.frame(subject = c("A", "F", "Me"),
+                       attitude = c("polite", "polite", "polite")))
+```
+
+```{r}
+# Posterior predictive model plots
+mcmc_areas(predict_voices, prob = 0.8) +
+  ggplot2::scale_y_discrete(labels = c("A", "F", "Me"))
+```
+

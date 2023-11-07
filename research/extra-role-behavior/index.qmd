@@ -1,0 +1,29 @@
+---
+title: "Invisible frontline work: How client characteristics cause extra-role behaviours in public service'"
+description: 'Frontline workers will happily go beyond the call of duty for their students. But they are more willing to accommodate some students than others.'
+author: Paw Hansen
+date: '2023-10-26'
+image: "featured.png"
+categories: [frontline work]
+
+---
+
+New article in [Public Management Review](https://www.tandfonline.com/doi/full/10.1080/14719037.2023.2270557?src=). 
+
+Frontline workers play a vital role in delivering public services, from teachers educating our children to nurses caring for patients. These dedicated individuals are entrusted with the discretion to allocate these services, and how they distribute and prioritize them can have a profound impact on citizens' lives. 
+
+In my new study, I explore a new aspect of frontline workers' roles: how citizen attributes affect frontline workers _extra-role behaviors_ — behaviors where they go above and beyond their formal job descriptions to provide public service.
+ 
+Frontline workers frequently exhibit extra-role behaviors by using their own personal resources and time to help clients. For example, nurses may stay after their shifts to care for patients, caseworkers might use their own money to assist clients in need, and teachers make themselves available after hours to support their students. These "extra-role behaviors" are essential to study because they are a significant part of how public service delivery occurs in practice, yet they often go unnoticed.
+ 
+To study this, I did a large-scale conjoint experimental study, surveying 1,507 Danish high school teachers. Teachers were presented with different fictive student profiles and then asked to rate their willingness to engage in various extra-role behaviors. 
+ 
+I found that teachers were more responsive to students who displayed low well-being or high effort in their classwork. For example, teachers were more willing to stay after their workday was over or to allow a phone call during the weekend if the student frequently handed in assignments or seemed to be having trouble at home.   
+
+Adding nuance to some previous studies on the topic, I also found that teachers become less willing to extend themselves the further requested behaviors are from their job expectations. That is, teachers are willing to go above and beyond for their students —doing something 'extra'— but they are less willing when that behavior is 'more extra'. Teachers were largely willing to stay after their workday, for instance, but much less willing to allow a phone call during the weekend.  
+
+Here is a figure from the paper: 
+
+![Causal effect of student cattributes on teachers' extra-role behavior](featured.png){#fig-student-attributes}
+
+You can download a preprint of the article [here](https://www.pawhansen.org/research/rule-bending-caseworkers/preprint.pdf).  
