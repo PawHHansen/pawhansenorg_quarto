@@ -27,6 +27,7 @@ library(tidyverse)
 library(broom)
 library(ggsci)
 library(modelsummary)
+library(marginaleffects)
 library(estimatr)
 
 theme_set(theme_minimal(base_size = 12))
@@ -110,6 +111,8 @@ A first inspection of the data indicates that smoking does have some effect on h
 
 ```{r}
 #| code-fold: false
+#| label: fig-iv-rawdat
+#| fig-cap: "Comparing health status across smoking status, by provinces with different cigarette tax rates"
 
 iv_example_data |> 
   mutate(smoker = as.factor(smoker)) |> 
@@ -152,9 +155,44 @@ Another way would be to use `iv_robust()` from the `estimatr` package:
 #| label: tbl-iv-model
 #| tbl-cap: "Instrumental variable example using simulated data"
 
-iv_robust(health ~ smoker | tax, data = iv_example_data) |>
-  modelsummary()
+iv_res <- 
+  iv_robust(health ~ smoker | tax, data = iv_example_data)
+
+iv_res |> 
+  modelsummary(gof_omit = "IC|Adj.",
+               coef_rename = c("smoker" = "Effect of smoking"),
+               stars = TRUE)
 ```
+
+Finally, we could accompany @tbl-iv-model with some predictions on the original scale. For our simulated example, the values on "health status" does not have any meaningful interpretation but for a real world application, they might. In any case, it is always a sound approach to not only present the difference between treatment and control since the difference doesn't convey any information about whether it is "large" or "small".  
+
+```{r}
+
+preds <- 
+  predictions(iv_res, by = "smoker")
+
+```
+
+And then plot those predictions:
+
+```{r}
+#| label: fig-iv-preds
+#| fig-cap: "Instrumental variable example using simulated data"
+
+preds |> 
+  mutate(lbl = ifelse(smoker == 1, "Smoker", "Not smoker")) |> 
+  ggplot(aes(as.factor(smoker), estimate, 
+             ymin = conf.low, 
+             ymax = conf.high)) + 
+  geom_pointrange() + 
+  geom_text(aes(label = lbl), 
+            nudge_x = .25) + 
+  scale_x_discrete(labels = NULL) + 
+  labs(x = NULL,
+       y = "Health status")
+
+```
+
 
 ### Final thoughts: Presenting your next instrumental variable analysis
 

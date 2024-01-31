@@ -158,7 +158,7 @@
     "href": "blog/toolbox-iv/index.html",
     "title": "The policy evaluator’s toolbox: Presenting your next instrumental variable analysis",
     "section": "",
-    "text": "New post for my “policy evaluator’s toolbox” series! Today, let’s have a stab at an instrumental variable analysis.\nAs always, I’ll go over some of the basic intuition but the main focus will be on writing some code to produce a few useful graphs and tables. For more in-depth treatment of the topic, check out the references listed below.\nPackages used in this post\nlibrary(tidyverse)\nlibrary(broom)\nlibrary(ggsci)\nlibrary(modelsummary)\nlibrary(estimatr)\n\ntheme_set(theme_minimal(base_size = 12))"
+    "text": "New post for my “policy evaluator’s toolbox” series! Today, let’s have a stab at an instrumental variable analysis.\nAs always, I’ll go over some of the basic intuition but the main focus will be on writing some code to produce a few useful graphs and tables. For more in-depth treatment of the topic, check out the references listed below.\nPackages used in this post\nlibrary(tidyverse)\nlibrary(broom)\nlibrary(ggsci)\nlibrary(modelsummary)\nlibrary(marginaleffects)\nlibrary(estimatr)\n\ntheme_set(theme_minimal(base_size = 12))"
   },
   {
     "objectID": "blog/toolbox-iv/index.html#footnotes",
