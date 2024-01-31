@@ -1,6 +1,6 @@
 ---
 title: "Blog"
-subtitle: "Things I stumbled upon on my learning journey."
+subtitle: "Some favorite things I have learned along the way."
 listing:
   contents: blog
   sort: "date desc"
