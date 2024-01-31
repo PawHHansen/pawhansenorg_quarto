@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 
 New post for my [“policy evaluator’s toolbox” series](https://www.pawhansen.org/blog#category=policy%20evaluation)! Today, let's have a stab at an instrumental variable analysis. 
 
+As always, I'll go over some of the basic intuition but the main focus will be on writing some code to produce a few useful graphs and tables. For more in-depth treatment of the topic, check out the references listed below. 
+
 ```{r}
 #| message: false
 #| warning: false
@@ -32,15 +34,19 @@ theme_set(theme_minimal(base_size = 12))
 
 ```
 
-For more on the details and theory behind IV, have a look at the free online version of [Telling stories with data](https://tellingstorieswithdata.com/14-causality_from_obs.html#instrumental-variables). 
+[BASIC INUTITION]
 
 ### Example 1: How does smoking affect your health?
 
-The problem is that whether people are smoking or not is not random. Rather, it is entangled in all kinds of other factors that might also affect health outcomes: education, gender, job type, and so on. 
+For our first example, say we wanted to know if smoking affected your health. The core problem is that whether people smoke or not is _not_ random. Rather, it is entangled in all kinds of other factors that might also affect health outcomes: education, gender, job type, and so on.
 
-IV can help us. Having a tax on smoking will affect whether people smoke or not but not their health _except through smoking status_. 
+IV can help us. We need some variable affecting health outcomes _only through smoking_. Ideas? Economists have naturally had their eyes fixed on taxes — a cigarette tax will affect whether people smoke or not but not their health *except through smoking status*. The idea is that we should look for provinces, states, or other units with varying cigarette taxes and then use that variation to estimate the effect of smoking on health outcomes.  
+
+To get started, we'll simulate some data. We begin with a data frame of people and whether they smoke or not: 
 
 ```{r}
+#| code-fold: false
+
 set.seed(853)
 
 num_observations <- 10000
@@ -48,13 +54,17 @@ num_observations <- 10000
 iv_example_data <- tibble(
   person = c(1:num_observations),
   smoker = 
-    sample(x = c(0:1), size = num_observations, replace = TRUE)
+    sample(x = c(0:1), 
+           size = num_observations, 
+           replace = TRUE)
   )
 ```
 
-Add health outcomes: 
+Then we add health outcomes:
 
 ```{r}
+#| code-fold: false
+
 iv_example_data <-
   iv_example_data |>
   mutate(health = if_else(
@@ -64,9 +74,11 @@ iv_example_data <-
   ))
 ```
 
-And then different tax levels on smoking for each of the two provinces:
+And finally different tax levels on smoking for each of the two provinces:
 
 ```{r}
+#| code-fold: false
+
 iv_example_data <- iv_example_data |>
   mutate(
     province = case_when(
@@ -89,12 +101,14 @@ iv_example_data <- iv_example_data |>
                     )
     )
 
-iv_example_data
+iv_example_data 
+
 ```
 
-A first inspection of the data indicates that smoking does have some effect on health:
+A first inspection of the data indicates that smoking does have some effect on health—healt status is lower for smokers in both provinces: 
 
 ```{r}
+#| code-fold: false
 
 iv_example_data |> 
   mutate(smoker = as.factor(smoker)) |> 
@@ -109,9 +123,15 @@ iv_example_data |>
 
 ```
 
-To estimate the effect, we do as follows:
+To estimate the effect, we can run two regressions and take their ratio: 
+
+1. A regression predicting health from tax levels
+2. A regression prediction smoker status from tax levels
+3. The ratio of the two tax coefficients will then represent the effect of smoking on health status: 
 
 ```{r}
+#| code-fold: false
+
 health_on_tax <- lm(health ~ tax, data = iv_example_data)
 smoker_on_tax <- lm(smoker ~ tax, data = iv_example_data)
 
@@ -135,11 +155,19 @@ iv_robust(health ~ smoker | tax, data = iv_example_data) |>
   modelsummary()
 ```
 
+### Example 2: How does enrouraging someone to participate in a policy affect outcomes? 
+
+For our second example, we will look at another classic instrument: encouragement. Consider the study used in _Regression and other stories_ in which students were encouraged to watch a television show believed to improve reading abilities. The core problem is that it is not random who actually watches the show. However, we can bypass that problem by using the encouragement to watch as an instrument. 
+
+```{r}
+
+
+```
+
 
 ### Final thoughts: Presenting your next instrumental variable analysis
-  
 
 ### Cool! Where can I learn more?
 
-* Gelman, A., Hill, J., & Vehtari, A. (2020). _Regression and other stories_. Cambridge University Press.
-* 
+-   Gelman, A., Hill, J., & Vehtari, A. (2020). *Regression and other stories*. Cambridge University Press.
+- Alexander, R. (2023). *Telling Stories with Data: With Applications in R*. CRC Press.  

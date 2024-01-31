@@ -1,0 +1,150 @@
+---
+title: "The policy evaluator's toolbox: Matching"
+author: "Paw Hansen"
+date: '2023-01-14'
+categories: [statistical analysis, policy evaluation]
+image: featured.jpg
+description: 'Text about matching'
+editor_options: 
+  chunk_output_type: console
+draft: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+New post for my [“policy evaluator’s toolbox” series](https://www.pawhansen.org/blog#category=policy%20evaluation)! Today, let's have a stab at an instrumental variable analysis.
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(MatchIt)
+library(broom)
+library(ggsci)
+library(janitor)
+library(modelsummary)
+library(estimatr)
+
+theme_set(theme_minimal(base_size = 12))
+
+```
+
+### Using lalonde data
+```{r}
+data("lalonde")
+
+lalonde |> 
+  glimpse()
+
+```
+
+### Check initial imlbalance
+```{r}
+# No matching; constructing a pre-match matchit object
+m_out_no_match <- matchit(treat ~ age + educ + race + married + 
+                   nodegree + re74 + re75, data = lalonde,
+                 method = NULL, distance = "glm")
+
+out_temp <- summary(m_out_no_match)  
+
+out_temp 
+
+```
+
+```{r}
+
+convert_to_tbl <- function(x) {
+  out_tbl <-
+  as.data.frame(x[["sum.matched"]]) |>  
+  rownames_to_column(var = "variable") |>  
+  as_tibble() |> 
+  clean_names()
+  
+  return(out_tbl)
+}
+
+
+```
+
+
+### Matching
+```{r}
+# 1:1 NN PS matching w/o replacement
+m.out1 <- matchit(treat ~ age + educ + race + married + 
+                   nodegree + re74 + re75, data = lalonde,
+                 method = "nearest", distance = "glm")
+```
+
+### Check balance in matched dataset
+```{r}
+# Checking balance after nearest neighbour matching
+out <- summary(m.out1, un = FALSE)
+
+out_tbl <- 
+  as.data.frame(out[["sum.matched"]]) |>  
+  rownames_to_column(var = "variable") |>  
+  as_tibble() |> 
+  clean_names()
+
+```
+
+244 units are unmacthed. 
+
+### Make a Love plot
+
+```{r}
+
+out_tbl |> 
+  mutate(variable = fct_reorder(variable, std_pair_dist)) |> 
+  ggplot(aes(std_pair_dist, variable)) + 
+  geom_point() +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "steelblue")
+  
+```
+
+Balance not ideal... 
+
+### Trying a Different Matching Specification
+
+```{r}
+# Full matching on a probit PS
+m.out2 <- matchit(treat ~ age + educ + race + married + 
+                   nodegree + re74 + re75, data = lalonde,
+                 method = "full", distance = "glm", link = "probit")
+
+# Checking balance after full matching
+summary(m.out2, un = FALSE)
+```
+
+New Love plot
+
+```{r}
+
+out_full <- summary(m.out2, un = FALSE)
+
+out_full <- 
+  as.data.frame(out_full[["sum.matched"]]) |>  
+  rownames_to_column(var = "variable") |>  
+  as_tibble() |> 
+  clean_names()
+
+out_full |> 
+  mutate(variable = fct_reorder(variable, std_pair_dist)) |> 
+  ggplot(aes(std_pair_dist, variable)) + 
+  geom_point() +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "steelblue")
+
+```
+
+
+```{r}
+
+
+```
+
+

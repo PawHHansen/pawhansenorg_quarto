@@ -85,5 +85,11 @@
   },
   "blog/case-study-bayesian-multilevel-modeling/index.qmd": {
     "index.html": "5ae68c16"
+  },
+  "blog/toolbox-synthetic-controls/index.qmd": {
+    "index.html": "4c63abbd"
+  },
+  "blog/toolbox-matching/index.qmd": {
+    "index.html": "75ae6222"
   }
 }

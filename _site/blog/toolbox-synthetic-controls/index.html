@@ -8,9 +8,9 @@
 
 <meta name="author" content="Paw Hansen">
 <meta name="dcterms.date" content="2023-11-03">
-<meta name="description" content="All your econ friends are doing it. Get started with instrumental variables">
+<meta name="description" content="Synthetic controls…">
 
-<title>Paw Hansen - The policy evaluator’s toolbox: Presenting your next instrumental variable analysis</title>
+<title>Paw Hansen - The policy evaluator’s toolbox: Synthetic Controls</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -100,9 +100,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 <style>html{ scroll-behavior: smooth; }</style>
 
-<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
-<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
-
 
 </head>
 
@@ -143,10 +140,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">The policy evaluator’s toolbox: Presenting your next instrumental variable analysis</h1>
+      <h1 class="title">The policy evaluator’s toolbox: Synthetic Controls</h1>
                   <div>
         <div class="description">
-          All your econ friends are doing it. Get started with instrumental variables
+          Synthetic controls…
         </div>
       </div>
                           <div class="quarto-categories">
@@ -187,204 +184,174 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<p>New post for my <a href="https://www.pawhansen.org/blog#category=policy%20evaluation">“policy evaluator’s toolbox” series</a>! Today, let’s have a stab at an instrumental variable analysis.</p>
-<p>As always, I’ll go over some of the basic intuition but the main focus will be on writing some code to produce a few useful graphs and tables. For more in-depth treatment of the topic, check out the references listed below.</p>
-<div class="cell">
-<details>
-<summary>Packages used in this post</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggsci)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(modelsummary)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(estimatr)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</div>
-<p>[BASIC INUTITION]</p>
-<section id="example-1-how-does-smoking-affect-your-health" class="level3">
-<h3 class="anchored" data-anchor-id="example-1-how-does-smoking-affect-your-health">Example 1: How does smoking affect your health?</h3>
-<p>For our first example, say we wanted to know if smoking affected your health. The core problem is that whether people smoke or not is <em>not</em> random. Rather, it is entangled in all kinds of other factors that might also affect health outcomes: education, gender, job type, and so on.</p>
-<p>IV can help us. We need some variable affecting health outcomes <em>only through smoking</em>. Ideas? Economists have naturally had their eyes fixed on taxes — a cigarette tax will affect whether people smoke or not but not their health <em>except through smoking status</em>. The idea is that we should look for provinces, states, or other units with varying cigarette taxes and then use that variation to estimate the effect of smoking on health outcomes.</p>
-<p>To get started, we’ll simulate some data. We begin with a data frame of people and whether they smoke or not:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">853</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>num_observations <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>iv_example_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">person =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>num_observations),</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">smoker =</span> </span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sample</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>), </span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">size =</span> num_observations, </span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Then we add health outcomes:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>iv_example_data <span class="ot">&lt;-</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  iv_example_data <span class="sc">|&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">health =</span> <span class="fu">if_else</span>(</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    smoker <span class="sc">==</span> <span class="dv">0</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rnorm</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">1</span>, <span class="at">sd =</span> <span class="dv">1</span>),</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rnorm</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">1</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>And finally different tax levels on smoking for each of the two provinces:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>iv_example_data <span class="ot">&lt;-</span> iv_example_data <span class="sc">|&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">province =</span> <span class="fu">case_when</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>      smoker <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">sample</span>(</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="st">"Nova Scotia"</span>, <span class="st">"Alberta"</span>),</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">size =</span> <span class="fu">n</span>(),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">replace =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">prob =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      ),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      smoker <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="fu">sample</span>(</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="st">"Nova Scotia"</span>, <span class="st">"Alberta"</span>),</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">size =</span> <span class="fu">n</span>(),</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">replace =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">prob =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>, <span class="dv">3</span><span class="sc">/</span><span class="dv">4</span>)</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">tax =</span> <span class="fu">case_when</span>(province <span class="sc">==</span> <span class="st">"Alberta"</span> <span class="sc">~</span> <span class="fl">0.3</span>, </span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                    province <span class="sc">==</span> <span class="st">"Nova Scotia"</span> <span class="sc">~</span> <span class="fl">0.5</span>,</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>                    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">9999999</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>                    )</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>iv_example_data </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 10,000 × 5
-   person smoker  health province      tax
-    &lt;int&gt;  &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;       &lt;dbl&gt;
- 1      1      0  1.11   Alberta       0.3
- 2      2      1 -0.0831 Alberta       0.3
- 3      3      1 -0.0363 Alberta       0.3
- 4      4      0  2.48   Alberta       0.3
- 5      5      0  0.617  Nova Scotia   0.5
- 6      6      0  0.748  Alberta       0.3
- 7      7      0  0.499  Alberta       0.3
- 8      8      0  1.05   Nova Scotia   0.5
- 9      9      1  0.113  Alberta       0.3
-10     10      1 -0.0105 Alberta       0.3
-# ℹ 9,990 more rows</code></pre>
-</div>
-</div>
-<p>A first inspection of the data indicates that smoking does have some effect on health—healt status is lower for smokers in both provinces:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>iv_example_data <span class="sc">|&gt;</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">smoker =</span> <span class="fu">as.factor</span>(smoker)) <span class="sc">|&gt;</span> </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(smoker, health)) <span class="sc">+</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="fu">aes</span>(<span class="at">color =</span> smoker), </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">alpha =</span> .<span class="dv">2</span>) <span class="sc">+</span> </span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(province)) <span class="sc">+</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_uchicago</span>() <span class="sc">+</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Health status"</span>,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Smoker or not"</span>) <span class="sc">+</span> </span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
-</div>
-</div>
-<p>To estimate the effect, we can run two regressions and take their ratio:</p>
-<ol type="1">
-<li>A regression predicting health from tax levels</li>
-<li>A regression prediction smoker status from tax levels</li>
-<li>The ratio of the two tax coefficients will then represent the effect of smoking on health status:</li>
-</ol>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>health_on_tax <span class="ot">&lt;-</span> <span class="fu">lm</span>(health <span class="sc">~</span> tax, <span class="at">data =</span> iv_example_data)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>smoker_on_tax <span class="ot">&lt;-</span> <span class="fu">lm</span>(smoker <span class="sc">~</span> tax, <span class="at">data =</span> iv_example_data)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">coefficient =</span> <span class="fu">c</span>(<span class="st">"health ~ tax"</span>, <span class="st">"smoker ~ tax"</span>, <span class="st">"ratio"</span>),</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">value =</span> <span class="fu">c</span>(</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coef</span>(health_on_tax)[<span class="st">"tax"</span>],</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coef</span>(smoker_on_tax)[<span class="st">"tax"</span>],</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coef</span>(health_on_tax)[<span class="st">"tax"</span>] <span class="sc">/</span> <span class="fu">coef</span>(smoker_on_tax)[<span class="st">"tax"</span>]</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3 × 2
-  coefficient   value
-  &lt;chr&gt;         &lt;dbl&gt;
-1 health ~ tax  1.24 
-2 smoker ~ tax -1.27 
-3 ratio        -0.980</code></pre>
-</div>
-</div>
-<p>Another way would be to use <code>iv_robust()</code> from the <code>estimatr</code> package:</p>
+<p>New post for my <a href="https://www.pawhansen.org/blog#category=policy%20evaluation">“policy evaluator’s toolbox” series</a>!</p>
+<p>Case: The economic impact of terrorism in the Basque country using data from Abadie and Gardeazabal (2003).</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">iv_robust</span>(health <span class="sc">~</span> smoker <span class="sc">|</span> tax, <span class="at">data =</span> iv_example_data) <span class="sc">|&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">modelsummary</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Synth)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"basque"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>The usual sequence of commands is:</p>
+<ol type="1">
+<li>dataprep() for matrix-extraction</li>
+<li>synth() for the construction of the synthetic control group</li>
+<li>synth.tab(), gaps.plot(), and path.plot() to summarize the results</li>
+</ol>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># dataprep: prepare data for synth</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>dataprep.out <span class="ot">&lt;-</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dataprep</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">foo =</span> basque</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  ,<span class="at">predictors=</span> <span class="fu">c</span>(<span class="st">"school.illit"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"school.prim"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"school.med"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"school.high"</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"school.post.high"</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>                 ,<span class="st">"invest"</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>                 )</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>   ,<span class="at">predictors.op =</span> <span class="fu">c</span>(<span class="st">"mean"</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>   ,<span class="at">dependent     =</span> <span class="fu">c</span>(<span class="st">"gdpcap"</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>   ,<span class="at">unit.variable =</span> <span class="fu">c</span>(<span class="st">"regionno"</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  ,<span class="at">time.variable =</span> <span class="fu">c</span>(<span class="st">"year"</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>       ,<span class="at">special.predictors =</span> <span class="fu">list</span>(</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"gdpcap"</span>,<span class="dv">1960</span><span class="sc">:</span><span class="dv">1969</span>,<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"sec.agriculture"</span>,<span class="fu">seq</span>(<span class="dv">1961</span>,<span class="dv">1969</span>,<span class="dv">2</span>),<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"sec.energy"</span>,<span class="fu">seq</span>(<span class="dv">1961</span>,<span class="dv">1969</span>,<span class="dv">2</span>),<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"sec.industry"</span>,<span class="fu">seq</span>(<span class="dv">1961</span>,<span class="dv">1969</span>,<span class="dv">2</span>),<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"sec.construction"</span>,<span class="fu">seq</span>(<span class="dv">1961</span>,<span class="dv">1969</span>,<span class="dv">2</span>),<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"sec.services.venta"</span>,<span class="fu">seq</span>(<span class="dv">1961</span>,<span class="dv">1969</span>,<span class="dv">2</span>),<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"sec.services.nonventa"</span>,<span class="fu">seq</span>(<span class="dv">1961</span>,<span class="dv">1969</span>,<span class="dv">2</span>),<span class="fu">c</span>(<span class="st">"mean"</span>)),</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        <span class="fu">list</span>(<span class="st">"popdens"</span>,<span class="dv">1969</span>,<span class="fu">c</span>(<span class="st">"mean"</span>)))</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        ,<span class="at">treatment.identifier  =</span> <span class="dv">17</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>        ,<span class="at">controls.identifier   =</span> <span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">16</span>,<span class="dv">18</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        ,<span class="at">time.predictors.prior =</span> <span class="fu">c</span>(<span class="dv">1964</span><span class="sc">:</span><span class="dv">1969</span>)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>,<span class="at">time.optimize.ssr  =</span> <span class="fu">c</span>(<span class="dv">1960</span><span class="sc">:</span><span class="dv">1969</span>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>,<span class="at">unit.names.variable  =</span> <span class="fu">c</span>(<span class="st">"regionname"</span>)</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>,<span class="at">time.plot =</span> <span class="fu">c</span>(<span class="dv">1955</span><span class="sc">:</span><span class="dv">1997</span>)</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. combine highest and second highest</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># schooling category and eliminate highest category</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X1[<span class="st">"school.high"</span>,] <span class="ot">&lt;-</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a> dataprep.out<span class="sc">$</span>X1[<span class="st">"school.high"</span>,] <span class="sc">+</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a> dataprep.out<span class="sc">$</span>X1[<span class="st">"school.post.high"</span>,]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X1                 <span class="ot">&lt;-</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a> <span class="fu">as.matrix</span>(dataprep.out<span class="sc">$</span>X1[</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="sc">-</span><span class="fu">which</span>(<span class="fu">rownames</span>(dataprep.out<span class="sc">$</span>X1)<span class="sc">==</span><span class="st">"school.post.high"</span>),])</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X0[<span class="st">"school.high"</span>,] <span class="ot">&lt;-</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a> dataprep.out<span class="sc">$</span>X0[<span class="st">"school.high"</span>,] <span class="sc">+</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a> dataprep.out<span class="sc">$</span>X0[<span class="st">"school.post.high"</span>,]</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X0                 <span class="ot">&lt;-</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X0[</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a> <span class="sc">-</span><span class="fu">which</span>(<span class="fu">rownames</span>(dataprep.out<span class="sc">$</span>X0)<span class="sc">==</span><span class="st">"school.post.high"</span>),]</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. make total and compute shares for the schooling catgeories</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>lowest  <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">rownames</span>(dataprep.out<span class="sc">$</span>X0)<span class="sc">==</span><span class="st">"school.illit"</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>highest <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">rownames</span>(dataprep.out<span class="sc">$</span>X0)<span class="sc">==</span><span class="st">"school.high"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X1[lowest<span class="sc">:</span>highest,] <span class="ot">&lt;-</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a> (<span class="dv">100</span> <span class="sc">*</span> dataprep.out<span class="sc">$</span>X1[lowest<span class="sc">:</span>highest,]) <span class="sc">/</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a> <span class="fu">sum</span>(dataprep.out<span class="sc">$</span>X1[lowest<span class="sc">:</span>highest,])</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>dataprep.out<span class="sc">$</span>X0[lowest<span class="sc">:</span>highest,] <span class="ot">&lt;-</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a> <span class="dv">100</span> <span class="sc">*</span> <span class="fu">scale</span>(dataprep.out<span class="sc">$</span>X0[lowest<span class="sc">:</span>highest,],</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>             <span class="at">center=</span><span class="cn">FALSE</span>,</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>             <span class="at">scale=</span><span class="fu">colSums</span>(dataprep.out<span class="sc">$</span>X0[lowest<span class="sc">:</span>highest,])</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run synth</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>synth.out <span class="ot">&lt;-</span> <span class="fu">synth</span>(<span class="at">data.prep.obj =</span> dataprep.out)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+X1, X0, Z1, Z0 all come directly from dataprep object.
+
+
+**************** 
+ searching for synthetic control unit  
+ 
+
+**************** 
+**************** 
+**************** 
+
+MSPE (LOSS V): 0.008864629 
+
+solution.v:
+ 0.01556808 0.001791073 0.04417159 0.03409436 8.45034e-05 0.2009837 0.09484593 0.007689228 0.1339499 0.008723843 0.009680725 0.1081258 0.3402913 
+
+solution.w:
+ 4.92e-08 5.17e-08 1.352e-07 2.85e-08 5.32e-08 5.177e-07 5.24e-08 7.29e-08 0.8507986 2.274e-07 4.03e-08 9.51e-08 0.1491998 5.61e-08 9.02e-08 1.061e-07 </code></pre>
+</div>
+</div>
+<p>And some results!</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>synth_tables <span class="ot">&lt;-</span> <span class="fu">synth.tab</span>(<span class="at">dataprep.res =</span> dataprep.out,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">synth.res =</span> synth.out)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>synth_tables<span class="sc">$</span>tab.pred</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                        Treated Synthetic Sample Mean
+school.illit                              3.321     7.645      10.983
+school.prim                              85.893    82.285      80.911
+school.med                                7.522     6.965       5.427
+school.high                               3.264     3.105       2.679
+invest                                   24.647    21.583      21.424
+special.gdpcap.1960.1969                  5.285     5.271       3.581
+special.sec.agriculture.1961.1969         6.844     6.179      21.353
+special.sec.energy.1961.1969              4.106     2.760       5.310
+special.sec.industry.1961.1969           45.082    37.636      22.425
+special.sec.construction.1961.1969        6.150     6.952       7.276
+special.sec.services.venta.1961.1969     33.754    41.104      36.528
+special.sec.services.nonventa.1961.1969   4.072     5.371       7.111
+special.popdens.1969                    246.890   196.288      99.414</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot results:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># path</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">path.plot</span>(<span class="at">synth.res =</span> synth.out,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">dataprep.res =</span> dataprep.out,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">Ylab =</span> <span class="fu">c</span>(<span class="st">"Real per-capita GDP (1986 USD, thousands)"</span>),</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">Xlab =</span> <span class="fu">c</span>(<span class="st">"year"</span>),</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">Ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">13</span>),</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">Legend =</span> <span class="fu">c</span>(<span class="st">"Basque country"</span>,<span class="st">"Synthetic Basque country"</span>),</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="tbl-iv-model" class="anchored">
-<table class="table table-sm table-striped small" data-quarto-postprocess="true">
-<caption>Table&nbsp;1: Instrumental variable example using simulated data</caption>
-<thead>
-<tr class="header">
-<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">&nbsp;(1)</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">(Intercept)</td>
-<td style="text-align: center;">0.977</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"></td>
-<td style="text-align: center;">(0.041)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">smoker</td>
-<td style="text-align: center;">−0.980</td>
-</tr>
-<tr class="even">
-<td style="text-align: left; box-shadow: 0px 1.5px;"></td>
-<td style="text-align: center; box-shadow: 0px 1.5px;">(0.081)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Num.Obs.</td>
-<td style="text-align: center;">10000</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">R2</td>
-<td style="text-align: center;">0.201</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">R2 Adj.</td>
-<td style="text-align: center;">0.201</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">AIC</td>
-<td style="text-align: center;">28342.1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BIC</td>
-<td style="text-align: center;">28363.7</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">RMSE</td>
-<td style="text-align: center;">1.00</td>
-</tr>
-</tbody>
-</table>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
 </div>
-
-
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">## gaps</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gaps.plot</span>(<span class="at">synth.res =</span> synth.out,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">dataprep.res =</span> dataprep.out,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">Ylab =</span> <span class="fu">c</span>(<span class="st">"Gap in real per-capita GDP (1986 USD, thousands)"</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">Xlab =</span> <span class="fu">c</span>(<span class="st">"Year"</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">Ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">1.5</span>,<span class="fl">1.5</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>            )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-</section>
-<section id="example-2-how-does-enrouraging-someone-to-participate-in-a-policy-affect-outcomes" class="level3">
-<h3 class="anchored" data-anchor-id="example-2-how-does-enrouraging-someone-to-participate-in-a-policy-affect-outcomes">Example 2: How does enrouraging someone to participate in a policy affect outcomes?</h3>
-<p>For our second example, we will look at another classic instrument: encouragement. Consider the study used in <em>Regression and other stories</em> in which students were encouraged to watch a television show believed to improve reading abilities. The core problem is that it is not random who actually watches the show. However, we can bypass that problem by using the encouragement to watch as an instrument.</p>
-</section>
 <section id="final-thoughts-presenting-your-next-instrumental-variable-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="final-thoughts-presenting-your-next-instrumental-variable-analysis">Final thoughts: Presenting your next instrumental variable analysis</h3>
 </section>
@@ -392,7 +359,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="cool-where-can-i-learn-more">Cool! Where can I learn more?</h3>
 <ul>
 <li>Gelman, A., Hill, J., &amp; Vehtari, A. (2020). <em>Regression and other stories</em>. Cambridge University Press.</li>
-<li>Alexander, R. (2023). <em>Telling Stories with Data: With Applications in R</em>. CRC Press.</li>
+<li></li>
 </ul>
 
 
