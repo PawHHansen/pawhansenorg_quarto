@@ -201,11 +201,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>[BASIC INUTITION]</p>
-<section id="example-1-how-does-smoking-affect-your-health" class="level3">
-<h3 class="anchored" data-anchor-id="example-1-how-does-smoking-affect-your-health">Example 1: How does smoking affect your health?</h3>
-<p>For our first example, say we wanted to know if smoking affected your health. The core problem is that whether people smoke or not is <em>not</em> random. Rather, it is entangled in all kinds of other factors that might also affect health outcomes: education, gender, job type, and so on.</p>
-<p>IV can help us. We need some variable affecting health outcomes <em>only through smoking</em>. Ideas? Economists have naturally had their eyes fixed on taxes — a cigarette tax will affect whether people smoke or not but not their health <em>except through smoking status</em>. The idea is that we should look for provinces, states, or other units with varying cigarette taxes and then use that variation to estimate the effect of smoking on health outcomes.</p>
+<section id="example-how-does-smoking-affect-your-health1" class="level3">
+<h3 class="anchored" data-anchor-id="example-how-does-smoking-affect-your-health1">Example: How does smoking affect your health?<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></h3>
+<p>Suppose we wanted to know if smoking affected your health. The core problem is that whether people smoke or not is <em>not</em> random. Rather, it is entangled in all kinds of other factors that might also affect health outcomes: education, gender, job type, and so on. In addition, health might affect smoking status because bad health could cause you to smoke fewer cigarettes or stop smoking altogether.</p>
+<p>IV can help us. We need some variable affecting health outcomes <em>only through smoking</em>. Ideas? Economists have naturally had their eyes fixed on taxes — a cigarette tax will affect whether people smoke or not but not their health <em>except through smoking status</em>.</p>
+<p>The idea is that we should look for provinces, states, or other units with varying cigarette taxes and then use that variation to estimate the effect of smoking on health outcomes.</p>
 <p>To get started, we’ll simulate some data. We begin with a data frame of people and whether they smoke or not:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">853</span>)</span>
@@ -381,12 +381,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="example-2-how-does-enrouraging-someone-to-participate-in-a-policy-affect-outcomes" class="level3">
-<h3 class="anchored" data-anchor-id="example-2-how-does-enrouraging-someone-to-participate-in-a-policy-affect-outcomes">Example 2: How does enrouraging someone to participate in a policy affect outcomes?</h3>
-<p>For our second example, we will look at another classic instrument: encouragement. Consider the study used in <em>Regression and other stories</em> in which students were encouraged to watch a television show believed to improve reading abilities. The core problem is that it is not random who actually watches the show. However, we can bypass that problem by using the encouragement to watch as an instrument.</p>
-</section>
 <section id="final-thoughts-presenting-your-next-instrumental-variable-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="final-thoughts-presenting-your-next-instrumental-variable-analysis">Final thoughts: Presenting your next instrumental variable analysis</h3>
+<p>There you have it. A super-brief introduction to get you started with IV estimation. There are a whole bunch of additional details I have now shown here as the goal was simply to provide some intuition. But now you have the building blocks to start thinking about using IV in your own work.</p>
 </section>
 <section id="cool-where-can-i-learn-more" class="level3">
 <h3 class="anchored" data-anchor-id="cool-where-can-i-learn-more">Cool! Where can I learn more?</h3>
@@ -398,7 +395,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </section>
 
-</main> <!-- /main -->
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Code for this example is largely adapted from <a href="https://tellingstorieswithdata.com/14-causality_from_obs.html#instrumental-variables"><em>Telling Stories with Data</em></a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
