@@ -10,7 +10,7 @@
 <meta name="dcterms.date" content="2024-03-25">
 <meta name="description" content="A quick tutorial on analyzing and presenting count data">
 
-<title>Paw Hansen - Casestudy: Doctor Visits</title>
+<title>Paw Hansen - Casestudy: Predicting Doctor Visits</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -57,7 +57,26 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -100,6 +119,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 <style>html{ scroll-behavior: smooth; }</style>
 
+<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
 
 </head>
 
@@ -140,7 +162,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Casestudy: Doctor Visits</h1>
+      <h1 class="title">Casestudy: Predicting Doctor Visits</h1>
                   <div>
         <div class="description">
           A quick tutorial on analyzing and presenting count data
@@ -184,7 +206,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<p>Sitting at a cafe feeling like doing some data analysis. (…)</p>
+<p>Today I’m sitting at a cafe and feel like doing some quick data analysis. We’ll be working with the <code>DoctorVisits</code> data from the <code>AER</code> package. Our goal is first to learn what predicts number of doctor visits. Second, to practice the workflow advocated in <span class="citation" data-cites="alexander2023">Alexander (<a href="#ref-alexander2023" role="doc-biblioref">2023</a>)</span>. That means, we’ll:</p>
+<ol type="1">
+<li><em>Plan</em> the kind of data and results we would like to end up with</li>
+<li>Use <em>simulation</em> to produce a data set with similar features as the one we would like to acquire</li>
+<li>Actually, <em>acquire</em> that data</li>
+<li><em>Explore</em> the data set using graphs, models, and anything else that might make sense for our specific analysis</li>
+<li><em>Share</em> what we found with others in a way that is compelling not only to stats aficionados but to stakeholders who care about the substance of what we’re studying.</li>
+</ol>
+<p>Let’s go!</p>
 <div class="cell">
 <details>
 <summary>Packages used in this post</summary>
@@ -212,7 +242,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="aquire" class="level3">
 <h3 class="anchored" data-anchor-id="aquire">Aquire</h3>
-<p>Now we’re ready to aquire a real dataset. A useful one is contained in the <code>AER</code> package.</p>
+<p>Now we’re ready to acquire a real dataset. A useful one is contained in the <code>AER</code> package.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -240,14 +270,932 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="explore" class="level3">
 <h3 class="anchored" data-anchor-id="explore">Explore</h3>
+<p>Next, let’s start exploring our dataset. We should probably start by having a look at some basic descriptives:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">datasummary_balance</span>(<span class="sc">~</span><span class="dv">1</span>, DoctorVisits)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Mean</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Std. Dev.</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">visits</td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;">0.3</td>
+<td style="text-align: right;">0.8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age</td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;">0.4</td>
+<td style="text-align: right;">0.2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">income</td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;">0.6</td>
+<td style="text-align: right;">0.4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">illness</td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;">1.4</td>
+<td style="text-align: right;">1.4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">reduced</td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">2.9</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; box-shadow: 0px 1.5px;">health</td>
+<td style="text-align: left; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: right; box-shadow: 0px 1.5px;">1.2</td>
+<td style="text-align: right; box-shadow: 0px 1.5px;">2.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: right;">N</td>
+<td style="text-align: right;">Pct.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">gender</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: right;">2488</td>
+<td style="text-align: right;">47.9</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">female</td>
+<td style="text-align: right;">2702</td>
+<td style="text-align: right;">52.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">private</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: right;">2892</td>
+<td style="text-align: right;">55.7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: right;">2298</td>
+<td style="text-align: right;">44.3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">freepoor</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: right;">4968</td>
+<td style="text-align: right;">95.7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: right;">222</td>
+<td style="text-align: right;">4.3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">freerepat</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: right;">4099</td>
+<td style="text-align: right;">79.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: right;">1091</td>
+<td style="text-align: right;">21.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">nchronic</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: right;">3098</td>
+<td style="text-align: right;">59.7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: right;">2092</td>
+<td style="text-align: right;">40.3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lchronic</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: right;">4585</td>
+<td style="text-align: right;">88.3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"></td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: right;">605</td>
+<td style="text-align: right;">11.7</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>And of course, we should plot our dependent variable to see how it looks:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>DoctorVisits <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(visits)) <span class="sc">+</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>We could also try to explore patterns in the data using a correlation matrix. To do so, we first need to recode any factor variables into dummies:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>doctor_visits <span class="ot">&lt;-</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  DoctorVisits <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.factor), <span class="sc">~</span><span class="fu">case_when</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    . <span class="sc">==</span> <span class="st">"no"</span> <span class="sc">~</span> <span class="dv">0</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    . <span class="sc">==</span> <span class="st">"yes"</span> <span class="sc">~</span> <span class="dv">1</span>)))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">datasummary_correlation</span>(doctor_visits)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">visits</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">gender</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">income</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">illness</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">reduced</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">health</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">private</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">freepoor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">freerepat</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">nchronic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lchronic</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">visits</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">gender</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age</td>
+<td style="text-align: right;">.12</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">income</td>
+<td style="text-align: right;">−.08</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">−.27</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">illness</td>
+<td style="text-align: right;">.22</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">.20</td>
+<td style="text-align: right;">−.15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">reduced</td>
+<td style="text-align: right;">.42</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">.09</td>
+<td style="text-align: right;">−.05</td>
+<td style="text-align: right;">.22</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">health</td>
+<td style="text-align: right;">.19</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">.02</td>
+<td style="text-align: right;">−.09</td>
+<td style="text-align: right;">.36</td>
+<td style="text-align: right;">.28</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">private</td>
+<td style="text-align: right;">−.01</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">−.06</td>
+<td style="text-align: right;">.28</td>
+<td style="text-align: right;">−.05</td>
+<td style="text-align: right;">−.03</td>
+<td style="text-align: right;">−.05</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">freepoor</td>
+<td style="text-align: right;">−.04</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">−.16</td>
+<td style="text-align: right;">−.16</td>
+<td style="text-align: right;">−.03</td>
+<td style="text-align: right;">−.01</td>
+<td style="text-align: right;">.06</td>
+<td style="text-align: right;">−.19</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">freerepat</td>
+<td style="text-align: right;">.11</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">.60</td>
+<td style="text-align: right;">−.40</td>
+<td style="text-align: right;">.20</td>
+<td style="text-align: right;">.08</td>
+<td style="text-align: right;">.07</td>
+<td style="text-align: right;">−.46</td>
+<td style="text-align: right;">−.11</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">nchronic</td>
+<td style="text-align: right;">.05</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">.30</td>
+<td style="text-align: right;">−.08</td>
+<td style="text-align: right;">.25</td>
+<td style="text-align: right;">.00</td>
+<td style="text-align: right;">.02</td>
+<td style="text-align: right;">.03</td>
+<td style="text-align: right;">−.07</td>
+<td style="text-align: right;">.16</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lchronic</td>
+<td style="text-align: right;">.14</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">.12</td>
+<td style="text-align: right;">−.07</td>
+<td style="text-align: right;">.22</td>
+<td style="text-align: right;">.22</td>
+<td style="text-align: right;">.19</td>
+<td style="text-align: right;">−.04</td>
+<td style="text-align: right;">.00</td>
+<td style="text-align: right;">.16</td>
+<td style="text-align: right;">−.30</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Perhaps more useful is to model the thing:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>mod_pois <span class="ot">&lt;-</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">glm</span>(visits <span class="sc">~</span> ., </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> DoctorVisits,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"poisson"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>mod_lm <span class="ot">&lt;-</span> </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(visits <span class="sc">~</span> ., </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> DoctorVisits)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">modelsummary</span>(<span class="at">models =</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>               <span class="fu">list</span>(<span class="st">"Poisson Model"</span> <span class="ot">=</span> mod_pois,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Normal Model"</span> <span class="ot">=</span> mod_lm))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Poisson Model</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Normal Model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: center;">−2.098</td>
+<td style="text-align: center;">0.036</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.102)</td>
+<td style="text-align: center;">(0.036)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">genderfemale</td>
+<td style="text-align: center;">0.156</td>
+<td style="text-align: center;">0.034</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.056)</td>
+<td style="text-align: center;">(0.022)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age</td>
+<td style="text-align: center;">0.279</td>
+<td style="text-align: center;">0.148</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.166)</td>
+<td style="text-align: center;">(0.067)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">income</td>
+<td style="text-align: center;">−0.187</td>
+<td style="text-align: center;">−0.056</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.085)</td>
+<td style="text-align: center;">(0.031)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">illness</td>
+<td style="text-align: center;">0.186</td>
+<td style="text-align: center;">0.060</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.018)</td>
+<td style="text-align: center;">(0.008)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">reduced</td>
+<td style="text-align: center;">0.127</td>
+<td style="text-align: center;">0.103</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.005)</td>
+<td style="text-align: center;">(0.004)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">health</td>
+<td style="text-align: center;">0.031</td>
+<td style="text-align: center;">0.017</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.010)</td>
+<td style="text-align: center;">(0.005)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">privateyes</td>
+<td style="text-align: center;">0.126</td>
+<td style="text-align: center;">0.035</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.072)</td>
+<td style="text-align: center;">(0.025)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">freepooryes</td>
+<td style="text-align: center;">−0.438</td>
+<td style="text-align: center;">−0.103</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.180)</td>
+<td style="text-align: center;">(0.052)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">freerepatyes</td>
+<td style="text-align: center;">0.084</td>
+<td style="text-align: center;">0.033</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.092)</td>
+<td style="text-align: center;">(0.038)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">nchronicyes</td>
+<td style="text-align: center;">0.117</td>
+<td style="text-align: center;">0.005</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"></td>
+<td style="text-align: center;">(0.067)</td>
+<td style="text-align: center;">(0.024)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lchronicyes</td>
+<td style="text-align: center;">0.151</td>
+<td style="text-align: center;">0.042</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: center; box-shadow: 0px 1.5px;">(0.082)</td>
+<td style="text-align: center; box-shadow: 0px 1.5px;">(0.036)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Num.Obs.</td>
+<td style="text-align: center;">5190</td>
+<td style="text-align: center;">5190</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">R2</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">0.202</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">R2 Adj.</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">0.200</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AIC</td>
+<td style="text-align: center;">6735.7</td>
+<td style="text-align: center;">11243.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BIC</td>
+<td style="text-align: center;">6814.4</td>
+<td style="text-align: center;">11328.3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Log.Lik.</td>
+<td style="text-align: center;">−3355.850</td>
+<td style="text-align: center;">−5608.565</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">F</td>
+<td style="text-align: center;">152.175</td>
+<td style="text-align: center;">119.029</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">RMSE</td>
+<td style="text-align: center;">0.73</td>
+<td style="text-align: center;">0.71</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Same with rstanarm</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstanarm)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>mod_pois_stan <span class="ot">&lt;-</span> </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(visits <span class="sc">~</span> ., </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> DoctorVisits,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"poisson"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
+Chain 1: 
+Chain 1: Gradient evaluation took 0.00135 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 13.5 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 2.82415 seconds (Warm-up)
+Chain 1:                3.11273 seconds (Sampling)
+Chain 1:                5.93688 seconds (Total)
+Chain 1: 
+
+SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
+Chain 2: 
+Chain 2: Gradient evaluation took 0.000176 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 1.76 seconds.
+Chain 2: Adjust your expectations accordingly!
+Chain 2: 
+Chain 2: 
+Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 3.13065 seconds (Warm-up)
+Chain 2:                2.93512 seconds (Sampling)
+Chain 2:                6.06578 seconds (Total)
+Chain 2: 
+
+SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
+Chain 3: 
+Chain 3: Gradient evaluation took 0.000178 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 1.78 seconds.
+Chain 3: Adjust your expectations accordingly!
+Chain 3: 
+Chain 3: 
+Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 3: 
+Chain 3:  Elapsed Time: 3.26012 seconds (Warm-up)
+Chain 3:                2.87063 seconds (Sampling)
+Chain 3:                6.13074 seconds (Total)
+Chain 3: 
+
+SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
+Chain 4: 
+Chain 4: Gradient evaluation took 0.00018 seconds
+Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 1.8 seconds.
+Chain 4: Adjust your expectations accordingly!
+Chain 4: 
+Chain 4: 
+Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 4: 
+Chain 4:  Elapsed Time: 3.17286 seconds (Warm-up)
+Chain 4:                3.01513 seconds (Sampling)
+Chain 4:                6.18799 seconds (Total)
+Chain 4: </code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mod_lm_stan <span class="ot">&lt;-</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(visits <span class="sc">~</span> ., </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> DoctorVisits,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"gaussian"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+Chain 1: 
+Chain 1: Gradient evaluation took 0.000609 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 6.09 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 0.139911 seconds (Warm-up)
+Chain 1:                0.584403 seconds (Sampling)
+Chain 1:                0.724314 seconds (Total)
+Chain 1: 
+
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
+Chain 2: 
+Chain 2: Gradient evaluation took 2.2e-05 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+Chain 2: Adjust your expectations accordingly!
+Chain 2: 
+Chain 2: 
+Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 0.132247 seconds (Warm-up)
+Chain 2:                0.602229 seconds (Sampling)
+Chain 2:                0.734476 seconds (Total)
+Chain 2: 
+
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
+Chain 3: 
+Chain 3: Gradient evaluation took 2.4e-05 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+Chain 3: Adjust your expectations accordingly!
+Chain 3: 
+Chain 3: 
+Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 3: 
+Chain 3:  Elapsed Time: 0.137286 seconds (Warm-up)
+Chain 3:                0.595953 seconds (Sampling)
+Chain 3:                0.733239 seconds (Total)
+Chain 3: 
+
+SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
+Chain 4: 
+Chain 4: Gradient evaluation took 2.3e-05 seconds
+Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+Chain 4: Adjust your expectations accordingly!
+Chain 4: 
+Chain 4: 
+Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 4: 
+Chain 4:  Elapsed Time: 0.127763 seconds (Warm-up)
+Chain 4:                0.570899 seconds (Sampling)
+Chain 4:                0.698662 seconds (Total)
+Chain 4: </code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>mod_negbinomial_stan <span class="ot">&lt;-</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stan_glm</span>(visits <span class="sc">~</span> ., </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> DoctorVisits,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"neg_binomial_2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
+Chain 1: 
+Chain 1: Gradient evaluation took 0.001221 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 12.21 seconds.
+Chain 1: Adjust your expectations accordingly!
+Chain 1: 
+Chain 1: 
+Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 1: 
+Chain 1:  Elapsed Time: 7.68772 seconds (Warm-up)
+Chain 1:                8.40601 seconds (Sampling)
+Chain 1:                16.0937 seconds (Total)
+Chain 1: 
+
+SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
+Chain 2: 
+Chain 2: Gradient evaluation took 0.000455 seconds
+Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 4.55 seconds.
+Chain 2: Adjust your expectations accordingly!
+Chain 2: 
+Chain 2: 
+Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 2: 
+Chain 2:  Elapsed Time: 7.43601 seconds (Warm-up)
+Chain 2:                9.21952 seconds (Sampling)
+Chain 2:                16.6555 seconds (Total)
+Chain 2: 
+
+SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
+Chain 3: 
+Chain 3: Gradient evaluation took 0.000508 seconds
+Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 5.08 seconds.
+Chain 3: Adjust your expectations accordingly!
+Chain 3: 
+Chain 3: 
+Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 3: 
+Chain 3:  Elapsed Time: 8.58572 seconds (Warm-up)
+Chain 3:                8.78884 seconds (Sampling)
+Chain 3:                17.3746 seconds (Total)
+Chain 3: 
+
+SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
+Chain 4: 
+Chain 4: Gradient evaluation took 0.00063 seconds
+Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 6.3 seconds.
+Chain 4: Adjust your expectations accordingly!
+Chain 4: 
+Chain 4: 
+Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
+Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
+Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
+Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
+Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
+Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
+Chain 4: 
+Chain 4:  Elapsed Time: 8.86754 seconds (Warm-up)
+Chain 4:                8.74941 seconds (Sampling)
+Chain 4:                17.617 seconds (Total)
+Chain 4: </code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(mod_pois_stan)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(mod_lm_stan)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="672"></p>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(mod_negbinomial_stan)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="index_files/figure-html/unnamed-chunk-7-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
 </section>
 <section id="share" class="level3">
-<h3 class="anchored" data-anchor-id="share">Share</h3>
+
+
 
 
 </section>
 
-</main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">Share</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-alexander2023" class="csl-entry" role="listitem">
+Alexander, Rohan. 2023. <span>“Telling Stories with Data,”</span> June. <a href="https://doi.org/10.1201/9781003229407">https://doi.org/10.1201/9781003229407</a>.
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {

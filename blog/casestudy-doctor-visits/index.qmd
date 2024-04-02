@@ -7,13 +7,22 @@ image: "featured.jpg"
 categories: [statistical analysis, presentation]
 editor_options: 
   chunk_output_type: console
+bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 ```
 
-Sitting at a cafe feeling like doing some data analysis.
+Today I'm sitting at a cafe and feel like doing some quick data analysis. We'll be working with the `DoctorVisits` data from the `AER` package. Our goal is first to learn what predicts number of doctor visits. Second, to practice the workflow advocated in @alexander2023. That means, we'll:
+
+1. _Plan_ the kind of data and results we would like to end up with
+2. Use _simulation_ to produce a data set with similar features as the one we would like to acquire
+3. Actually, _acquire_ that data
+4. _Explore_ the data set using graphs, models, and anything else that might make sense for our specific analysis
+5. _Share_ what we found with others in a way that is compelling not only to stats aficionados but to stakeholders who care about the substance of what we're studying.
+
+Let's go!
 
 ```{r warning=F, message=F}
 #| code-fold: true
@@ -25,7 +34,6 @@ library(modelsummary)
 library(marginaleffects)
 library(AER)
 library(ggsci)
-
 
 theme_set(theme_minimal(base_size = 12))
 
