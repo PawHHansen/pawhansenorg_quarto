@@ -1,5 +1,5 @@
 ---
-title: "Casestudy: Doctor Visits"
+title: "Casestudy: Predicting Doctor Visits"
 author: "Paw Hansen"
 description: "A quick tutorial on analyzing and presenting count data"
 date: '2024-03-25'
@@ -13,7 +13,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 ```
 
-Sitting at a cafe feeling like doing some data analysis. (...)
+Sitting at a cafe feeling like doing some data analysis.
 
 ```{r warning=F, message=F}
 #| code-fold: true
@@ -135,6 +135,5 @@ pp_check(mod_lm_stan)
 pp_check(mod_negbinomial_stan)
 
 ```
-
 
 ### Share
