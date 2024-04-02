@@ -91,5 +91,11 @@
   },
   "blog/toolbox-matching/index.qmd": {
     "index.html": "75ae6222"
+  },
+  "blog/casestudy-doctor-visits/index.qmd": {
+    "index.html": "84518e32"
+  },
+  "blog/casestudy-tidy-funtime/index.qmd": {
+    "index.html": "43aed489"
   }
 }

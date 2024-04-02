@@ -1,0 +1,140 @@
+---
+title: "Casestudy: Doctor Visits"
+author: "Paw Hansen"
+description: "A quick tutorial on analyzing and presenting count data"
+date: '2024-03-25'
+image: "featured.jpg"
+categories: [statistical analysis, presentation]
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+Sitting at a cafe feeling like doing some data analysis. (...)
+
+```{r warning=F, message=F}
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(broom)
+library(modelsummary)
+library(marginaleffects)
+library(AER)
+library(ggsci)
+
+
+theme_set(theme_minimal(base_size = 12))
+
+```
+
+### Plan
+
+For this example, we want to try to estimate what makes people go see their doctor. To plan this, we need to consider two things. First, what will a useful data set look like? And second, what will the final graph look like?
+
+Concerning our first criterion, a useful data set should include a variable indicating how many times the respondent went to see their doctor for a given period of time. This will be our outcome variable when we get to modeling. In addition, our data set should include one or more predictors. These could be a the individual (i.e. respondent) level or perhaps we might want to consider some form of multilevel modeling - perhaps seeing your doctor or not also depends on things like doctor supply at the state level, your family's total financial resources, and several other factors on primarily found at the individual level. IN iur example here, though, we'll stick with what can be measured at the respondent level. Thus, a useful dataset might look a in \[crossref\].
+
+Second, a useful graph could simply include a plot of the relevant predictors as well as their corresponding uncertainty intervals. \[crossref\] is one example.
+
+\[Make sketches\]
+
+### Simulate
+
+Next, we should try to simulate what our dataset might look like as this will prepare us for any challenges we might end up facing once we have acquired the real dataset.
+
+### Aquire
+
+Now we're ready to acquire a real dataset. A useful one is contained in the `AER` package.
+
+```{r}
+data("DoctorVisits")
+
+head(DoctorVisits)
+
+```
+
+### Explore
+
+Next, let's start exploring our dataset. We should probably start by having a look at some basic descriptives:
+
+```{r}
+
+datasummary_balance(~1, DoctorVisits)
+
+```
+
+And of course, we should plot our dependent variable to see how it looks:
+
+```{r}
+DoctorVisits |> 
+  ggplot(aes(visits)) + 
+  geom_histogram()
+```
+
+We could also try to explore patterns in the data using a correlation matrix. To do so, we first need to recode any factor variables into dummies:
+
+```{r}
+
+doctor_visits <- 
+  DoctorVisits |> 
+  mutate(across(where(is.factor), ~case_when(
+    . == "no" ~ 0,
+    . == "yes" ~ 1)))
+
+datasummary_correlation(doctor_visits)
+
+```
+
+Perhaps more useful is to model the thing:
+
+```{r}
+
+mod_pois <- 
+  glm(visits ~ ., 
+    data = DoctorVisits,
+    family = "poisson")
+
+mod_lm <- 
+  lm(visits ~ ., 
+    data = DoctorVisits)
+
+modelsummary(models = 
+               list("Poisson Model" = mod_pois,
+                    "Normal Model" = mod_lm))
+
+```
+
+Same with rstanarm
+
+```{r}
+
+library(rstanarm)
+
+mod_pois_stan <- 
+  stan_glm(visits ~ ., 
+    data = DoctorVisits,
+    family = "poisson")
+
+mod_lm_stan <- 
+  stan_glm(visits ~ ., 
+    data = DoctorVisits,
+    family = "gaussian")
+
+mod_negbinomial_stan <- 
+  stan_glm(visits ~ ., 
+    data = DoctorVisits,
+    family = "neg_binomial_2")
+
+pp_check(mod_pois_stan)
+
+pp_check(mod_lm_stan)
+
+pp_check(mod_negbinomial_stan)
+
+```
+
+
+### Share
