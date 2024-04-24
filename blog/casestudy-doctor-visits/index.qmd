@@ -7,6 +7,7 @@ image: "featured.jpg"
 categories: [statistical analysis, presentation]
 editor_options: 
   chunk_output_type: console
+draft: true
 bibliography: references.bib
 ---
 
@@ -29,6 +30,7 @@ Let's go!
 #| code-summary: "Packages used in this post"
 
 library(tidyverse)
+library(rstanarm)
 library(broom)
 library(modelsummary)
 library(marginaleffects)
@@ -51,11 +53,29 @@ In our example here, though, we'll stick with what can be measured at the respon
 
 Second, a useful graph could simply include a plot of the relevant predictors as well as their corresponding uncertainty intervals. \[crossref\] is one example.
 
+
+
 \[Make sketches\]
 
 ### Simulate
 
 Next, we should try to simulate what our dataset might look like as this will prepare us for any challenges we might end up facing once we have acquired the real dataset.
+
+```{r}
+
+n_obs <- 1000
+
+dat_sim <- 
+  tibble(
+    num_visits = rnorm(n = n_obs, 2) |> round(), 
+    gender = sample(c("female", "male"), n_obs, replace = T),
+    age = 
+    
+  )
+
+```
+
+
 
 ### Aquire
 
