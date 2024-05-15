@@ -69,8 +69,7 @@ dat_sim <-
   tibble(
     num_visits = rnorm(n = n_obs, 2) |> round(), 
     gender = sample(c("female", "male"), n_obs, replace = T),
-    age = 
-    
+    age = 20
   )
 
 ```
