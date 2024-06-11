@@ -97,5 +97,8 @@
   },
   "blog/casestudy-tidy-funtime/index.qmd": {
     "index.html": "43aed489"
+  },
+  "blog/prob-puzzle-bertrand-ballot/index.qmd": {
+    "index.html": "42c2957e"
   }
 }

@@ -1,0 +1,152 @@
+---
+title: "Summer Simulations: Exploring Bertrand's Ballot Problem with a Simulation Study"
+author: "Paw Hansen"
+date: '2024-06-11'
+categories: [statistical analysis]
+image: featured.jpg
+description: "Use tidy simulation to solve a version of Bertrand's classic ballot problem"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(cowplot)
+library(kableExtra)
+theme_set(theme_minimal_grid())
+```
+
+Bertrand's ballot problem is a fascinating challenge in probability theory, originally posed by French mathematician Joseph Bertrand. It asks: if two candidates, A and B, receive 𝑝 and 𝑞 votes respectively, what is the probability that A will stay ahead of B throughout the entire vote counting process? Traditionally, this problem uses absolute vote counts, but in this study, I'll tweak the problem slightly and use percentage points.
+
+The goal is to simulate this problem using R, exploring how different vote distributions affect the probability of A staying ahead. 
+
+To begin, I will simulate one vote counting process by taking advantage of the `cumsum` function, which calculates the cumulative sum. Let's simulate a case where A gets 51 percent of the votes and B 49 percent. I also create a "ballot box", which contains 1s for Part A's votes and 0s for those of Party B. 
+
+```{r}
+#| code-fold: false
+ 
+p <- 51 # Example of A's vote share
+q <- 100 - p # B's vote share follows from p
+
+votes <- c(rep(1, p), rep(0, q)) # Ballot box w/ all votes. 
+  
+```
+
+Now I can create my first simulation by randomly drawing from the ballot box vector (`votes`). The variables `votes_for_a` and `votes_for_b` keep track of how many votes each party has received.  
+
+```{r}
+#| code-fold: false
+
+  sims <- 
+    tibble(ballot = 1:length(votes)) |> 
+    mutate(voted_a = sample(votes, length(votes))) |> 
+    mutate(votes_for_a = cumsum(voted_a),
+           votes_for_b = cumsum(1 - voted_a))
+```
+
+The resulting data looks like this:
+
+```{r}
+#| code-fold: false
+
+head(sims)
+
+```
+
+Did Party A stay ahead of Party B throughout the vote counting? 
+
+```{r}
+#| code-fold: false
+
+all(sims$votes_for_a > sims$votes_for_b)
+```
+
+No (which makes sense given a final majority of only one percent). 
+
+### Simulating One Vote Count Using a Function
+Let us turn our initial code into a function to simulate the vote counting process. This function will help determine if A stays ahead throughout the count: 
+
+```{r}
+#| code-fold: false
+
+simulate_votes <- function(p = 50, q = 100 - p) {
+  votes <- c(rep(1, p), rep(0, q)) # Ballot box w/ all votes
+  
+  sims <- 
+    tibble(ballot = 1:length(votes)) |> 
+    mutate(voted_a = sample(votes, length(votes))) |> 
+    mutate(votes_for_a = cumsum(voted_a),
+           votes_for_b = cumsum(1 - voted_a))
+  
+  all(sims$votes_for_a > sims$votes_for_b)
+}
+
+# simulate_votes(p = 60) # Make sure the function works
+
+```
+
+### Running the Simulation
+Next, I run the simulation across multiple trials to obtain reliable probability estimates. I use the crossing function to create a tibble of all combinations of trials and values of 𝑝. We then apply our simulation function to each value of 𝑝 and record whether A stayed ahead: 
+
+```{r}
+#| code-fold: false
+
+rs <- 
+  crossing(trial = 1:1000, 
+           p = 50:100) |> 
+  mutate(ahead = map_lgl(p, ~simulate_votes(p = .)))
+```
+
+### Analyzing the Results
+One way of presenting the results is using a line graph to show the probability that A stays ahead throughout the vote count for different values of 𝑝.
+
+```{r}
+rs |> 
+  group_by(p) |> 
+  summarize(probability = mean(ahead)) |> 
+  ggplot(aes(p, probability)) + 
+  geom_line(size = 1, color = "firebrick") + 
+  scale_y_continuous(labels = scales::percent_format()) + 
+  labs(title = "More votes, bigger chance of leading from start to finish",
+       subtitle = "Probability that Party A will be strictly ahead of B throughout the count",
+       x = "Party A' Vote Share",
+       y = "Probability of Staying Ahead") + 
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+This plot shows that as the number of votes for A increases, the probability of A staying ahead throughout the count also increases.
+
+Another approach would be to present the results in a table, focusing on specific values of 
+𝑝 that might be of particular interest: 
+
+```{r}
+#| label: tbl-prob-bertrand
+#| tbl-cap: "Probability of Party A staing ahead througout the vote counting for selected final vote shares"
+
+rs |> 
+  group_by(p) |> 
+  summarize(probability = mean(ahead)) |> 
+  filter(p %in% c(50, 75, 90, 100)) |>  
+  kable(col.names = c("Party A's final vote share", "Probability"), 
+    digits = 2) 
+```
+
+This table will show the probability of party A staying ahead for selected values of 𝑝, providing a quick reference for key points in our simulation.
+
+### Conclusion
+The above simulation study reveals that the likelihood of one party remaining ahead throughout the vote count significantly increases with a higher number of votes. This result is quite intuitive but simulation allows us to test if our intuition is correct as well as assigning specific probabilities to outcomes of interest. 
+
+You could complicate the simulation study by adding more parties or by allowing the probability of receiving a vote to vary throughout the vote count (so that Party A is more likely to receive its votes early on, for example).   
+
+Happy simulating!
+

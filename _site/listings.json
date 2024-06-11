@@ -2,6 +2,7 @@
   {
     "listing": "/blog.html",
     "items": [
+      "/blog/prob-puzzle-bertrand-ballot/index.html",
       "/blog/toolbox-iv/index.html",
       "/blog/simulation-design-analysis-pt2/index.html",
       "/blog/simulation-design-analysis/index.html",
