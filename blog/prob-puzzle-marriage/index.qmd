@@ -1,0 +1,168 @@
+---
+title: "Summer Simulations: Solving the Marriage Problem Using Tidy Simulation"
+author: "Paw Hansen"
+date: '2024-06-12'
+categories: [statistical analysis]
+image: featured.jpg
+description: "Use tidy simulation to solve a version the marriage problem!"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(cowplot)
+library(kableExtra)
+theme_set(theme_minimal_grid())
+```
+The marriage problem, also known as the secretary problem, is a classic probability puzzle that allows us to study optimal stopping theory and decision-making under uncertainty.
+
+It goes like this: Consider a woman who has 𝑛 men willing to marry her. If all the men showed up at once, she could order them and choose the best. Unfortunately for her, the men arrive one at a time and in random order. After dating each man for a short period of time, she must decide, before moving on to the next, whether or not to marry him. If she rejects his marriage proposal, she cannot recall him at a later time and, should she decide to marry, she will have to forego meeting the remaining suitors. 
+
+What strategy should she adopt if she wants to maximize the probability of marrying the best suitor?
+
+This puzzle is an excellent example of a type of decision-making that requires some form of stopping rule: when should the woman "stop playing" and accept the suitor at hand? This type of puzzle extends to many other forms of decisions such as hiring employees, selling assets, and making investment choices. 
+
+### Stopping Rule #1: Choosing at Random
+To begin, consider a naive strategy: choosing at random. For example, knowing that she has 10 suitors, the woman rolls a fair 10-sided die and chooses the suitor corresponding to the number on the die (e.g. the fifth suitor to show up).
+
+How often will that strategy lead to woman to marrying the optimal suitor? 
+
+```{r}
+#| code-fold: false
+
+n_men <- 10
+suitors <- 1:n_men
+
+mean(replicate(1000, sample(suitors, n_men)) == n_men)
+
+```
+
+On average, this strategy results in choosing the best suitor about 10% of the time - pretty bad odds if you ask me.  
+
+Also, notice that this is equivalent to picking a specific position every time, such as always choosing the third suitor:
+
+```{r}
+#| code-fold: false
+
+mean(replicate(10000, sample(suitors, n_men)[3]) == n_men)
+
+```
+
+### Stopping Rule #2: Building on Baseline Knowledge
+A more sophisticated strategy would be using a training set to first establish a baseline before making a final selection. Here’s how it works:
+
+* Observe a set number of suitors (training set) without making a selection.
+* Set a cutoff based on the highest quality suitor in the training set.
+* Choose the first suitor in the test set who exceeds this cutoff.
+
+Let's implement this strategy in R:
+
+```{r}
+#| code-fold: false
+
+baseline_choice <- function(n_men, n_train) {
+  
+  # Define suitors
+  suitors <- 1:n_men
+  
+  # Shuffle the suitors
+  suitors <- sample(suitors, n_men)
+  
+  # Split suitors into "train" and "test" sets
+  train <- suitors[1:n_train]
+  test <- suitors[(n_train + 1):n_men]
+  
+  # Define a cutoff
+  cutoff <- max(train)
+  
+  # Choose the first suitor greater than the cutoff
+  choice <- which(test > cutoff)[1]
+  
+  # If no suitor is found that is greater than the cutoff, choose the last one
+  if (is.na(choice)) {
+    return(suitors[n_men])  # Choose the last suitor in the original list
+  } else {
+    return(test[choice])
+  }
+}
+
+```
+
+To make sure this function works, let's run a simulation with ten suitors with the first five being set aside for the training set:
+
+```{r}
+#| code-fold: false
+
+results <- replicate(1000, baseline_choice(10, 5))
+mean(results == n_men)
+```
+
+Already much better odds than choosing at random. 
+
+The next question is of course what is the optimal number of suitors to set aside for the training set? We can look this number up on Wikipedia but simulation allows us to approximate the right number without knowing a lot of math. 
+
+Let us rerun our simulation from before but this time with 100 suitors. Using the ever-useful `crossing` function and `map` we can study how the probability of choosing the best suitor varies with the number of suitors set aside. We'll do 10.0000 simulations: 
+
+```{r}
+#| code-fold: false
+
+n_men <- 100
+
+sims <- 
+  crossing(trial = 1:10000, 
+         n_train = 1:99) |> 
+  mutate(suitor_score = map_dbl(n_train, ~baseline_choice(n_men, .))) 
+
+```
+
+And then calculate the probability: 
+```{r}
+#| label: tbl-prob-marriage
+#| tbl-cap: "Probability of selecting the best suitor given size of training set"
+
+rs <- 
+  sims |> 
+  group_by(n_train) |> 
+  summarize(chose_mr_ten= mean(suitor_score == n_men)) |> 
+  arrange(desc(chose_mr_ten))
+
+head(rs) |> 
+  kable(col.names = c("Number of suitors in training set", "Probaiblity"), digits = 2)
+
+```
+
+We can also visualize the success rate as a function of the training set size:
+
+```{r}
+
+rs |> 
+  ggplot(aes(n_train, chose_mr_ten)) + 
+  geom_line(color = "firebrick", linewidth = 1) + 
+  scale_y_continuous(labels = scales::percent_format()) + 
+  labs(x = 'Number of Suitors in "Training Set"',
+       y = "Probability of Choosing the Best Suitor",
+       title = str_wrap("Using About One-Third of Suitors for Training Will Get You The Best Suitor in The End", 60)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+### Conclusion
+The optimal stopping rule in the marriage problem suggests that the woman should observe and reject roughly the first third of suitors, then marry the first suitor who is better than those she has previously observed.
+
+This approach to solving the marriage problem showcases the power of simulation in understanding decision-making processes. Similar strategies can be applied to various real-world scenarios, such as hiring the best candidate, selling a house at the optimal price, or making investment decisions, where making the right choice is crucial and must be done with incomplete information.
+
+Happy simulating! 
+
+### Cool! Where Can I Learn More? 
+
+* David Robinson's blogpost on tidy simulation: http://varianceexplained.org/posts/ 

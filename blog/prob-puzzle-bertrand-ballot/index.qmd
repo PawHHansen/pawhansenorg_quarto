@@ -137,11 +137,11 @@ rs |>
   group_by(p) |> 
   summarize(probability = mean(ahead)) |> 
   filter(p %in% c(50, 75, 90, 100)) |>  
-  kable(col.names = c("Party A's final vote share", "Probability"), 
-    digits = 2) 
+  kable(col.names = c("Party A's final vote share", "Probability"),
+        digits = 2) 
 ```
 
-This table will show the probability of party A staying ahead for selected values of 𝑝, providing a quick reference for key points in our simulation.
+This table shows the probability of party A staying ahead for selected values of 𝑝, providing a quick reference for key points in our simulation.
 
 ### Conclusion
 The above simulation study reveals that the likelihood of one party remaining ahead throughout the vote count significantly increases with a higher number of votes. This result is quite intuitive but simulation allows us to test if our intuition is correct as well as assigning specific probabilities to outcomes of interest. 
