@@ -1,0 +1,171 @@
+---
+title: "Summer Simulations: Optimizing the Number of Factory Workers in Erewhon"
+author: "Paw Hansen"
+date: '2024-06-11'
+categories: [statistical analysis]
+image: featured.jpg
+description: "Use tidy simulation to solve an optimization puzzle in R!"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| code-summary: "Packages used in this post"
+
+library(tidyverse)
+library(cowplot)
+library(kableExtra)
+theme_set(theme_minimal_grid())
+```
+
+As summer approaches, I found the time to write up a brief post on the "factory workers in Erewhon" problem - another classic probability puzzle.
+
+The puzzle is as follows: Labor laws in Erewhon require factory owners to give every worker a holiday whenever one of them has a birthday, and they must hire without discrimination based on birthdays. Except for these holidays, they work a 365-day year. The owners want to maximize the expected total number of man-days worked per year in a factory. How many workers should the factories in Erewhon employ?
+
+### Simulating One Year of Birthdays in a Single Factory
+To tackle this problem, we start by writing a function to simulate a single year. For our case in Erewhon, the function might look something like this:
+
+```{r}
+#| code-fold: false
+simulate_one_year <- function(n_workers) {
+  
+  # Calculate the number of holidays for a year with n_workers
+  # replace = TRUE because workers may share birthdays
+  n_holidays <- length(unique(sample(1:365, n_workers, replace = T)))
+  
+  # Number of work days = # Days in year - # holidays 
+  n_work_days <- 365 - n_holidays
+  
+  # And then the man-days...
+  man_days <- n_work_days * n_workers
+  
+  return(man_days)
+  
+}
+```
+
+This function takes the number of workers in a given factory as input, simulates the occurrence of birthdays in a year, and uses that to calculate the resulting man-days.
+
+Let's ensure it works by trying it with 10 workers:
+```{r}
+#| code-fold: false
+simulate_one_year(10)
+
+```
+
+The function returns 3,550 man-days. Now, let's optimize this to find the ideal number of workers for maximizing man-days in a factory.
+
+### Running the Function Multiple Times
+We'll use crossing to create a combination of trials (simulations) and the number of workers:
+
+```{r}
+#| code-fold: false
+set.seed(25062024)
+
+sims <- 
+  crossing(trial = 1:1000, 
+         n_workers = seq(1, 500, 1)) |> 
+  mutate(man_days = map_dbl(n_workers, ~ simulate_one_year(.)))
+
+```
+
+The function takes a little time to run. Afterward, we can calculate the results:
+
+```{r}
+#| code-fold: false
+sims_rs <- 
+  sims |> 
+  group_by(n_workers) |> 
+  summarise(avg_workdays = mean(man_days)) |> 
+  arrange(desc(avg_workdays))
+```
+
+
+```{r}
+#| label: tbl-n-workers
+#| tbl-cap: "Resulting man-hour for selected number of factory workers in Erewhon"
+
+sims_rs |> 
+  head() |> 
+  kbl(col.names = c("Number of workers", "Resulting man-days"), 
+      format.args = list(big.mark = ','))
+```
+
+Our simulation analysis suggests that the optimal number of workers is around 376, which is close to the true number of 364/365 found using calculus. Depending on the desired level of precision, our estimate might be good enough. Simulation has brought us close without needing to delve into complex probability theory.
+
+We can also visualize our results:
+
+```{r}
+sims_rs |> 
+  ggplot(aes(n_workers, avg_workdays)) + 
+  geom_line(linewidth = 1, color = "firebrick") +
+  scale_y_continuous(labels = scales::comma) + 
+  labs(title = "Factories in Erewhon have about 365 workers",
+       x = "Number of workers",
+       y = "Number of man-days")
+```
+
+And say we wanted to calculate confidence intervals for the number of man-days provided the 365 optimal number of factory workers
+
+```{r}
+#| code-fold: false
+set.seed(25062024)
+sims_2 <- 
+  tibble(
+    man_days = replicate(1000, simulate_one_year(365)) 
+  )
+
+quantile(sims_2$man_days, probs = c(0.025, .5, 0.975 ))
+  
+```
+
+Likewise, we could plot the uncertainty using a histogram: 
+```{r}
+#| label: fig-manday-hist
+#| fig-cap: "Distribution of Man-Days for Optimal Number of Workers (i.e. 365)"
+
+sims_2 |> 
+  ggplot(aes(man_days)) + 
+  geom_histogram(fill = "firebrick", color = "white") + 
+  geom_vline(xintercept = mean(sims_2$man_days), lty = 2, linewidth = 1) + 
+  labs(x = "Man-Days",
+       y = "Frequency") 
+```
+
+A final note: We could also have calculated the expected number of man-hours using calculus and probability theory (you can look up the formulas online, just type "factories erewhon"). Let's do that and compare those numbers with our simulations 
+
+```{r}
+#| code-fold: false
+calc <- 
+  tibble(
+    n_workers = seq(1, 500, 1), 
+    calc_workers = n_workers * 365 * (364/365)^n_workers
+  )
+```
+
+```{r}
+#| label: fig-calc-v-sims
+#| fig-cap: "Comparing simulations (red line) to calculus (blue dots)"
+sims_rs |> 
+  ggplot(aes(n_workers, avg_workdays)) + 
+  geom_point(data = calc, aes(n_workers, calc_workers), color = "steelblue", size = .05) + 
+  geom_line(linewidth = 1, color = "firebrick", alpha = .9) +
+  scale_y_continuous(labels = scales::comma) + 
+  labs(x = "Number of workers",
+       y = "Number of man-days")
+
+```
+
+Almost impossible to distinguish! 
+
+### Conclusion
+Our simulation has demonstrated that the optimal number of factory workers in Erewhon is approximately 365, balancing the trade-off between birthdays and workdays effectively. This result, derived through simulation, closely aligns with the theoretical maximum obtained using calculus. Simulation provides an accessible and intuitive approach to solving complex probability problems, making it an invaluable tool for decision-making in uncertain scenarios.
+
+By employing the tidyverse suite in R, we've not only solved a fascinating probability puzzle but also showcased the power of simulations in optimizing real-world decisions. Whether you’re a factory owner in Erewhon or tackling a different optimization problem, simulations can provide clear insights and guide you to the best outcomes.
