@@ -10,9 +10,6 @@ about:
     - icon: github
       text: "GitHub"
       href: https://github.com/PawHHansen 
-    - icon: twitter
-      text: "Twitter"
-      href: https://twitter.com/PawHHansen 
     - text: "Google Scholar"
       href: https://scholar.google.dk/citations?user=EWSaCHoAAAAJ&hl=da&oi=ao 
 ---
